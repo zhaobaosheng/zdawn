@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath*:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="${jdbc.driverClass}" />
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}" />
+		<property name="user" value="${jdbc.user}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="minPoolSize" value="${jdbc.miniPoolSize}" />
+		<property name="maxPoolSize" value="${jdbc.maxPoolSize}" />
+		<property name="initialPoolSize" value="${jdbc.initialPoolSize}" />
+		<property name="maxIdleTime" value="${jdbc.maxIdleTime}" />
+		<property name="acquireIncrement" value="${jdbc.acquireIncrement}" />
+		<property name="checkoutTimeout" value="${jdbc.checkoutTimeout}" />
+	</bean>
+	
+	<bean id="queryExecutor" class="com.zdawn.commons.sqlquery.domain.QueryExecutor">
+		<property name="dataSource" ref="dataSource" />
+		<property name="pagingSqlDecorator" ref="pagingSqlDecorator" />
+	</bean>
+	
+	<bean id="pagingSqlDecorator" class="com.zdawn.commons.jdbc.OraclePagingSqlDecorator"/>	
+	
+	<bean id="sqlSessionFactory" class="com.zdawn.commons.sysmodel.persistence.spring.SqlSessionFactoryBean">  
+		<property name="dataSource" ref="dataSource" />
+		<property name="executor" ref="executor" />
+	</bean> 
+	<bean id="executor" class="com.zdawn.commons.sysmodel.persistence.executor.CommonExecutor"/> 
+	<bean id="sqlSessionTemplate" class="com.zdawn.commons.sysmodel.persistence.spring.SqlSessionTemplate">
+       	<constructor-arg index="0" ref="sqlSessionFactory" />
+    </bean>
+    
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" rollback-for="com.zdawn.commons.sysmodel.persistence.PersistenceException" />
+			<tx:method name="update*" propagation="REQUIRED" rollback-for="com.zdawn.commons.sysmodel.persistence.PersistenceException" />
+			<tx:method name="delete*" propagation="REQUIRED" rollback-for="com.zdawn.commons.sysmodel.persistence.PersistenceException" />
+			<tx:method name="insert*" propagation="REQUIRES_NEW" rollback-for="com.zdawn.commons.sysmodel.persistence.PersistenceException" />
+			<tx:method name="*" propagation="SUPPORTS" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+	<aop:config proxy-target-class="true">
+		<aop:pointcut id="baseServiceOperations" expression="execution(public * com.zdawn.commons.sysmodel.*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="baseServiceOperations" order="1"/>
+	</aop:config>
+	
+	<bean id="sysUserMgr" class="com.zdawn.commons.sysmodel.SysUserMgrImpl">
+		<property name="sqlSessionTemplate" ref="sqlSessionTemplate" />
+		<property name="orgMgr" ref="sysEapOrgMgr" />
+	</bean>
+	<bean id="sysEapOrgMgr" class="com.zdawn.commons.sysmodel.SysEapOrgMgrImpl">
+		<property name="sqlSessionTemplate" ref="sqlSessionTemplate" />
+	</bean>
+	
+</beans>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataModel>
+<version>1.0</version>
+<config>
+	<property name="" value=""/>
+</config>
+<Entities>
+	<!-- tableName必填  name可不填 系统使用tableName转换
+	<Entity name="实体名称" tableName="表名" description="中文描述" type="实体类型" uniqueColumn="主键字段" clazz="实体对应java类全名 可以不填">
+		column必填  name可不填 系统使用column转换
+		字段类型
+		java.lang.Boolean
+		java.lang.String
+		java.lang.Short
+		java.lang.Integer
+		java.lang.Long
+		java.lang.Double
+		java.lang.Float
+		java.math.BigDecimal
+		java.util.Date|java.sql.Date
+		java.sql.Timestamp
+		streamToClob
+		stringToClob
+		streamToBlob
+		bytearrayToBlob
+		<property using="true-启用 false-停用" name="属性名" column="数据库表字段名" description="属性中文描述" type="字段类型" length="长度" scale="精度" notNull="false" defaultValue="缺省值" toStringformat="转换字符格式">
+			
+				entityName和 tableName 任填其一
+        		propertyName和column 任填其一
+        		displayPropertyName和 displayColumn任填其一
+			
+			<reference entityName="引用实体名称" tableName="引用表名"  propertyName="引用属性名" column="引用数据库表字段名" type="引用类型codeTable or table" displayPropertyName="显示属性" displayColumn="显示字段"/>
+		</property>
+		
+			entityName和 tableName 任填其一
+        	propertyName和column 任填其一
+        	selfPropertyName和selfColumn任填其一
+		
+		<relation selfPropertyName="本实体关联属性名" selfColumn="本实体关联字段名" description="实体关系描述" entityName="引用实体名称" tableName="表名"  propertyName="引用属性名" column="数据库表字段名" type="关系类型oneToMany or oneToOne"/>
+	</Entity>
+	-->
+	<Entity name="EapUser" tableName="EAP_USER" description="用户表" type="sys" uniqueColumn="FD_OBJECTID" clazz="com.zdawn.commons.sysmodel.model.EapUser">
+		<property using="true" name="fdObjectid" column="FD_OBJECTID" description="主键" type="java.lang.String" length="36" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="userId" column="USER_ID" description="用户标识" type="java.lang.String" length="15" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="logonName" column="LOGON_NAME" description="用户登录使用名称" type="java.lang.String" length="50" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="isLock" column="IS_LOCK" description="锁定用户 1锁定 0不锁定" type="java.lang.String" length="5" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="creatorId" column="CREATOR_ID" description="创建人标识" type="java.lang.String" length="15" scale="" notNull="true" defaultValue="" toStringformat=""/>
+		<property using="true" name="password" column="PASSWORD" description="用户密码" type="java.lang.String" length="36" scale="" notNull="true" defaultValue="" toStringformat=""/>
+		<property using="true" name="createTime" column="CREATE_TIME" description="用户创建时间" type="java.sql.Timestamp" length="" scale="" notNull="true" defaultValue="" toStringformat="yyyy-MM-dd HH:mm:ss"/>
+		<property using="true" name="failureCount" column="FAILURE_COUNT" description="登录失败次数" type="java.lang.Short" length="1" scale="" notNull="true" defaultValue="" toStringformat=""/>
+		<relation selfPropertyName="" selfColumn="USER_ID" description="用户与组关联" entityName="" tableName="EAP_USER_GROUP_REL"  propertyName="" column="USER_ID" type="oneToMany"/>
+		<relation selfPropertyName="" selfColumn="USER_ID" description="用户与机构管理员" entityName="" tableName="EAP_ORG_ADMIN_REL"  propertyName="" column="USER_ID" type="oneToOne"/>
+	</Entity>
+	<Entity name="EapUserGroupRel" tableName="EAP_USER_GROUP_REL" description="用户组关联表" type="sys" uniqueColumn="FD_OBJECTID" clazz="com.zdawn.commons.sysmodel.model.EapUserGroupRel">
+		<property using="true" name="fdObjectid" column="FD_OBJECTID" description="主键" type="java.lang.String" length="36" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="userId" column="USER_ID" description="用户标识" type="java.lang.String" length="15" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="groupId" column="GROUP_ID" description="用户组ID" type="java.lang.String" length="50" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="creatorId" column="CREATOR_ID" description="创建人标识" type="java.lang.String" length="15" scale="" notNull="true" defaultValue="" toStringformat=""/>
+		<property using="true" name="createTime" column="CREATE_TIME" description="用户创建时间" type="java.sql.Timestamp" length="" scale="" notNull="true" defaultValue="" toStringformat="yyyy-MM-dd HH:mm:ss"/>
+	</Entity>
+	<Entity name="EapOrgAdminRel" tableName="EAP_ORG_ADMIN_REL" description="机构管理员" type="sys" uniqueColumn="FD_OBJECTID" clazz="com.zdawn.commons.sysmodel.model.EapOrgAdminRel">
+		<property using="true" name="fdObjectid" column="FD_OBJECTID" description="主键" type="java.lang.String" length="36" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="userId" column="USER_ID" description="用户标识" type="java.lang.String" length="15" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="orgId" column="ORG_ID" description="机构ID" type="java.lang.String" length="50" scale="" notNull="false" defaultValue="" toStringformat=""/>
+		<property using="true" name="idLevel" column="ID_LEVEL" description="机构级别" type="java.lang.Short" length="2" scale="" notNull="false" defaultValue="" toStringformat=""/>
+	</Entity>
+</Entities>
+</DataModel>

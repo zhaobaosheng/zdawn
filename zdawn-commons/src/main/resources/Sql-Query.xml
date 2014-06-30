@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Sql-Query>
+	<version>1.0</version>
+	<!-- 
+		java.lang.String
+		java.lang.Integer
+		java.lang.Long
+		java.lang.Double
+		java.lang.Float
+		java.math.BigDecimal
+		java.util.Date|java.sql.Date
+		java.sql.Timestamp
+	<ResultMapper id="标识" type="行数据类型  stringArray or objectArray or stringMap or objectMap">
+		<result column="数据库字段名" property="输出参数表识" type="java数据类型" toStringformat=""/>
+	</ResultMapper>
+	<QueryConfig code="唯一标识" name="中文名称" paging="是否分页 true or false" resultMapper="引用resultMap的id属性">
+		<ParameterMapper>
+			<parameter column="数据库字段名" property="输入参数表识" type="java数据类型" empty="true or false" toStringformat=""/>
+		</ParameterMapper>
+		<SelectSql>
+		  查询sql内容
+		  ${xx}替换参数
+		  #{xx}替换成占位符? 后期绑定参数
+		  $[] 替换内容块 可以包含上面两种，如果输入条件参数中需要替换内容都为空则整个替换内容块为空
+		</SelectSql>
+		<CountSql>分页使用计算查询记录数</CountSql>
+	</QueryConfig>
+	 -->
+	 <ResultMapper id="defaultStringMap" type="stringMap"/>
+	 <ResultMapper id="employeeStringMap" type="stringMap">
+		<result column="org_id" property="orgId" type="java.lang.String" toStringformat=""/>
+		<result column="birthday" property="birthday" type="java.util.Date" toStringformat="yyyy-MM-dd"/>
+		<result column="is_depart" property="isDepart" type="java.lang.Integer" toStringformat=""/>
+	 </ResultMapper>
+	 <QueryConfig code="eap_org" name="机构查询" paging="false" resultMapper="employeeStringMap">
+		<ParameterMapper>
+			<parameter column="org_name" property="orgName" type="java.lang.String" empty="false" toStringformat=""/>
+			<parameter column="birthday" property="birthday" type="java.lang.String" empty="false" toStringformat="yyyy-MM-dd"/>
+		</ParameterMapper>
+		<SelectSql>
+			select eap_org.org_id,
+			       eap_org.org_name,
+			       eap_org.unit_code,
+			       eap_employee.employee_id,
+			       eap_employee.name,
+			       eap_employee.sex,
+			       eap_employee.update_date,
+			       eap_employee.is_depart,
+			       eap_employee.sort,
+			       eap_employee.birthday
+			  from eap_org,
+			       eap_employee
+			 where eap_org.org_id = eap_employee.depart_id
+			 and eap_employee.name like '%${name}%'
+			 and eap_org.org_id=#{orgId}
+			 $[and eap_employee.employee_id=#{employeeId}]
+		</SelectSql>
+		<CountSql>
+			select count(*)
+			  from eap_org,
+			       eap_employee
+			 where eap_org.org_id = eap_employee.depart_id
+			 and eap_employee.name like '${name}%'
+			 and eap_org.org_id=#{orgId}
+			 $[and eap_employee.employee_id=#{employeeId}]
+		</CountSql>
+	</QueryConfig>
+</Sql-Query>
