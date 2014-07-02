@@ -223,6 +223,20 @@ public class BeanUtil {
 	public static PropertyDescriptor getBeanPropertyDescriptor(Class<?> clazz,String propertyName){
 		return getBeanPropertyDescriptors(clazz,propertyName)[0];
 	}
+	/**
+	 * 获取Bean属性信息
+	 * @param clazz Class
+	 * @return key属性名 value属性类型
+	 */
+	public static Map<String,Class<?>> getBeanPropertyInfo(Class<?> clazz){
+		PropertyDescriptor[] all = getAllBeanPropertyDescriptor(clazz);
+		if(all==null) return null;
+		Map<String,Class<?>> propertyInfo = new HashMap<String, Class<?>>();
+		for (int i = 0; i < all.length; i++) {
+			propertyInfo.put(all[i].getName(), all[i].getPropertyType());
+		}
+		return propertyInfo;
+	}
 	
 	public static boolean exist(String[] array,String value){
 		if(array==null || array.length==0) return false;
