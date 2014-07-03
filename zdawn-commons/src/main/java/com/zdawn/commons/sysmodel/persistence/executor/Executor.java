@@ -2,6 +2,7 @@ package com.zdawn.commons.sysmodel.persistence.executor;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 
 import com.zdawn.commons.sysmodel.metaservice.SysModel;
@@ -79,24 +80,42 @@ public interface Executor {
 	 * <br> oneToOne实体的key为首字母小写的实体名称（数据字典中实体的 entityName属性） 
 	 * <br> oneToMany实体的key为首字母小写的实体名称（数据字典中实体的 entityName属性）+List
 	 * @param entityName 实体名
-	 * @param id 对象主键
+	 * @param propertyName 属性名 null代表主键
+	 * @param id 对象主键或是唯一值
+	 * @param excludeChildEntity true为不包括子实体对象
 	 * @param sysModel 数据字典
 	 * @param con 数据连接
 	 * @return Map &lt;String, Object&gt;
 	 * @throws PersistenceException
 	 */
-	public Map<String, Object> getData(String entityName, Object id,
-			SysModel sysModel, Connection con) throws PersistenceException;
+	public Map<String, Object> getData(String entityName, String propertyName,
+			Object id, boolean excludeChildEntity, SysModel sysModel,
+			Connection con) throws PersistenceException;
 	/**
 	 * 获取实体对象
 	 * @param clazz 实体Java类
 	 * @param entityName 实体名
-	 * @param id 对象主键
+	 * @param propertyName 属性名 null代表主键
+	 * @param id 对象主键或是唯一值
+	 * @param excludeChildEntity true为不包括子实体对象
 	 * @param sysModel 数据字典
 	 * @param con 数据连接
 	 * @return T 实体对象
 	 * @throws PersistenceException
 	 */
-	public <T> T get(Class<T> clazz,String entityName, Object id, SysModel sysModel,
+	public <T> T get(Class<T> clazz, String entityName, String propertyName,
+			Object id, boolean excludeChildEntity, SysModel sysModel,
 			Connection con) throws PersistenceException;
+	
+	public void batchInsertData(String entityName,List<Map<String, Object>> data,
+			SysModel sysModel, Connection con) throws PersistenceException;
+	
+	public <T> void batchInsertClazz(String entityName, List<T> data,
+			SysModel sysModel, Connection con) throws PersistenceException;
+	
+	public void batchUpdateData(String entityName,List<Map<String, Object>> data,
+			SysModel sysModel, Connection con) throws PersistenceException;
+	
+	public <T> void batchUpdateClazz(String entityName, List<T> data,
+			SysModel sysModel, Connection con) throws PersistenceException;
 }

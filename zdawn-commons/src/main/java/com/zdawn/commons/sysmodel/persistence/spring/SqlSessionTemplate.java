@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -74,6 +75,117 @@ public class SqlSessionTemplate implements SqlSession {
 	@Override
 	public Connection getConnection() {
 		return sqlSessionProxy.getConnection();
+	}
+
+	@Override
+	public Map<String, Object> getData(String entityName, Object id,
+			boolean excludeChildEntity) throws PersistenceException {
+		return sqlSessionProxy.getData(entityName, id, excludeChildEntity);
+	}
+
+	@Override
+	public <T> T get(Class<T> clazz, String entityName, Object id,
+			boolean excludeChildEntity) throws PersistenceException {
+		return sqlSessionProxy.get(clazz, entityName, id, excludeChildEntity);
+	}
+
+	@Override
+	public Map<String, Object> getData(String entityName, String propertyName,
+			Object uniqueValue) throws PersistenceException {
+		return sqlSessionProxy.getData(entityName, propertyName, uniqueValue);
+	}
+
+	@Override
+	public Map<String, Object> getData(String entityName, String propertyName,
+			Object uniqueValue, boolean excludeChildEntity)
+			throws PersistenceException {
+		return sqlSessionProxy.getData(entityName, propertyName, uniqueValue, excludeChildEntity);
+	}
+
+	@Override
+	public <T> T get(Class<T> clazz, String entityName, String propertyName,
+			Object uniqueValue) throws PersistenceException {
+		return sqlSessionProxy.get(clazz, entityName, propertyName, uniqueValue);
+	}
+
+	@Override
+	public <T> T get(Class<T> clazz, String entityName, String propertyName,
+			Object uniqueValue, boolean excludeChildEntity)
+			throws PersistenceException {
+		return sqlSessionProxy.get(clazz, entityName, propertyName, uniqueValue, excludeChildEntity);
+	}
+
+	@Override
+	public int executeSql(String sql, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.executeSql(sql, para);
+	}
+
+	@Override
+	public int[] executeArraySql(List<String> sqls) throws PersistenceException {
+		return sqlSessionProxy.executeArraySql(sqls);
+	}
+
+	@Override
+	public void batchSaveData(String entityName, List<Map<String, Object>> data)
+			throws PersistenceException {
+		sqlSessionProxy.batchSaveData(entityName, data);
+	}
+
+	@Override
+	public void batchUpdateData(String entityName,
+			List<Map<String, Object>> data) throws PersistenceException {
+		sqlSessionProxy.batchUpdateData(entityName, data);		
+	}
+
+	@Override
+	public <T> void batchSaveClazz(String entityName, List<T> data)
+			throws PersistenceException {
+		sqlSessionProxy.batchSaveClazz(entityName, data);
+	}
+
+	@Override
+	public <T> void batchUpdateClazz(String entityName, List<T> data)
+			throws PersistenceException {
+		sqlSessionProxy.batchUpdateClazz(entityName, data);
+	}
+
+	@Override
+	public String[] searchOneRow(String sql, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.searchOneRow(sql, para);
+	}
+
+	@Override
+	public List<String[]> getSearchResult(String sql, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.getSearchResult(sql, para);
+	}
+
+	@Override
+	public List<Object[]> getSearchResult(String sql, String[] objectTypes,
+			Object... para) throws PersistenceException {
+		return sqlSessionProxy.getSearchResult(sql, objectTypes, para);
+	}
+
+	@Override
+	public List<Map<String, Object>> getSearchResult(String sql,
+			String[] objectTypes, String[] keyAlias, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.getSearchResult(sql, objectTypes, keyAlias, para);
+	}
+
+	@Override
+	public <T> List<T> getSearchResult(Class<T> clazz, String sql,
+			Map<String, String> specialType, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.getSearchResult(clazz, sql, specialType, para);
+	}
+
+	@Override
+	public long getFunctionNumber(String sql, Object... para)
+			throws PersistenceException {
+		return sqlSessionProxy.getFunctionNumber(sql, para);
 	}
 
 	@Override

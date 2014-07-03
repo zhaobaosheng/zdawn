@@ -7,12 +7,16 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.zdawn.commons.jdbc.support.AbstractType;
 import com.zdawn.commons.jdbc.support.TypeUtil;
+import com.zdawn.util.beans.BeanUtil;
 
 public class JdbcUtils {
 	private static final Logger log = LoggerFactory.getLogger(JdbcUtils.class);
@@ -130,6 +134,147 @@ public class JdbcUtils {
 		}
 		return al.size()==0 ? null:al;
 	}
+	public static List<Object[]> getSearchResult(Connection connection,String sql, String[] objectTypes,Object... para) throws SQLException{
+	    ArrayList<Object[]> al = new ArrayList<Object[]>();
+	    PreparedStatement ps = null;
+	    ResultSet resultset = null;
+		try {
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = connection.prepareStatement(sql);
+			if(para != null){
+				for (int i = 0; i < para.length; i++) {
+					if(para[i]==null) throw new SQLException("query parameter is null");
+					AbstractType type = TypeUtil.getDataType(para[i].getClass().getName());
+					type.set(ps, para[i], i+1);
+				}
+			}
+			resultset = ps.executeQuery();
+			while (resultset.next()) {
+				Object[] value = new Object[objectTypes.length];
+				for (int i = 0; i < objectTypes.length; i++) {
+					AbstractType type = TypeUtil.getDataType(objectTypes[i]);
+					value[i] = type.get(resultset, i+1);
+				}
+				al.add(value);
+			}
+		} catch (SQLException e) {
+		    throw e;
+		}finally{
+			closeResultSet(resultset);
+			closeStatement(ps);
+		}
+		return al.size()==0 ? null:al;
+	}
+	public static List<Map<String, Object>> getSearchResult(Connection connection,String sql,
+			String[] objectTypes, String[] keyAlias, Object... para) throws SQLException{
+		List<Map<String, Object>> al = new ArrayList<Map<String, Object>>();
+	    PreparedStatement ps = null;
+	    ResultSet resultset = null;
+		try {
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = connection.prepareStatement(sql);
+			if(para != null){
+				for (int i = 0; i < para.length; i++) {
+					if(para[i]==null) throw new SQLException("query parameter is null");
+					AbstractType type = TypeUtil.getDataType(para[i].getClass().getName());
+					type.set(ps, para[i], i+1);
+				}
+			}
+			resultset = ps.executeQuery();
+			if(keyAlias==null){
+				String[] fields = null;
+				ResultSetMetaData rsmd = resultset.getMetaData();
+				int colCount = rsmd.getColumnCount(); //取得列数
+				fields = new String[colCount];
+				for (int col = 1; col <= colCount; col++)
+					fields[col - 1] = rsmd.getColumnName(col);
+				while (resultset.next()) {
+					Map<String, Object> value = new HashMap<String, Object>();
+					for (int i = 0; i < fields.length; i++) {
+						AbstractType type = TypeUtil.getDataType(objectTypes[i]);
+						Object tmp = type.get(resultset, i+1);
+						value.put(fields[i], tmp);
+					}
+					al.add(value);
+				}
+			}else{
+				while (resultset.next()) {
+					Map<String, Object> value = new HashMap<String, Object>();
+					for (int i = 0; i < objectTypes.length; i++) {
+						AbstractType type = TypeUtil.getDataType(objectTypes[i]);
+						Object tmp = type.get(resultset, i+1);
+						value.put(keyAlias[i], tmp);
+					}
+					al.add(value);
+				}
+			}
+		} catch (SQLException e) {
+		    throw e;
+		}finally{
+			closeResultSet(resultset);
+			closeStatement(ps);
+		}
+		return al.size()==0 ? null:al;
+	}
+
+	public static <T> List<T> getSearchResult(Connection connection, Class<T> clazz,
+			String sql, Map<String, String> specialType, Object... para)
+			throws SQLException {
+		 	PreparedStatement ps = null;
+		    ResultSet resultset = null;
+		    List<T> list = new ArrayList<T>();
+			try {
+				Map<String, Class<?>> beanProperty = BeanUtil.getBeanPropertyInfo(clazz);
+				if (log.isDebugEnabled()) {
+					log.debug(sql);
+				}
+				ps = connection.prepareStatement(sql);
+				if(para != null){
+					for (int i = 0; i < para.length; i++) {
+						if(para[i]==null) throw new SQLException("query parameter is null");
+						AbstractType type = TypeUtil.getDataType(para[i].getClass().getName());
+						type.set(ps, para[i], i+1);
+					}
+				}
+				resultset = ps.executeQuery();
+				//collect query field
+				Map<String,String> fieldMap = new HashMap<String, String>();
+				ResultSetMetaData rsmd = resultset.getMetaData();
+				int colCount = rsmd.getColumnCount();
+				for (int col = 1; col <= colCount; col++){
+					String column = rsmd.getColumnName(col);
+					fieldMap.put(column.toUpperCase(),column);
+				}
+				 List<String[]> columnInfo = new ArrayList<String[]>();
+				for (Map.Entry<String, Class<?>> entry : beanProperty.entrySet()) {
+					String key = fieldMap.get(entry.getKey().toUpperCase());
+					if(key==null) continue;
+					String special = specialType.get(entry.getKey());
+					String[] tmp = new String[] { key, entry.getKey(),
+						special == null ? entry.getValue().getName() : special };
+					columnInfo.add(tmp);
+				}
+				while (resultset.next()) {
+					Map<String, Object> value = new HashMap<String, Object>();
+					for (int i = 0; i < columnInfo.size(); i++) {
+						String[] tmp = columnInfo.get(i);
+						AbstractType type = TypeUtil.getDataType(tmp[2]);
+						value.put(tmp[1],type.get(resultset,tmp[0]));
+					}
+					list.add(BeanUtil.bindBean(clazz, value));
+				}
+			} catch (SQLException e) {
+			    throw e;
+			}finally{
+				closeResultSet(resultset);
+				closeStatement(ps);
+			}
+			return list.size()==0 ? null:list;
+	}
 	/**
 	 * 查询统计函数结果
 	 * @param connection 数据连接
@@ -188,7 +333,7 @@ public class JdbcUtils {
 			ps = connection.prepareStatement(sql);
 			if(para != null){
 				for (int i = 0; i < para.length; i++) {
-					if(para[i]==null) throw new SQLException("query parameter is null");
+					if(para[i]==null) throw new SQLException("executed parameter is null");
 					AbstractType type = TypeUtil.getDataType(para[i].getClass().getName());
 					type.set(ps, para[i], i+1);
 				}
@@ -200,5 +345,32 @@ public class JdbcUtils {
 			closeStatement(ps);
 		}
 		return count;
+	}
+	/**
+	 * 执行一组sql语句
+	 * @param connection 数据库连接
+	 * @param sqls SQL语句集合
+	 * @return int[] 数组-数组每个元素代表sql执行影响行数
+	 * @throws SQLException
+	 */
+	public static int[] executeArraySql(Connection connection,List<String> sqls) throws SQLException{
+		if(sqls==null || sqls.size()==0) throw new SQLException("none have sql");
+		Statement st = null;
+		int[] result = new int[sqls.size()];
+		try {
+			st = connection.createStatement();
+			for (int i = 0; i < sqls.size(); i++) {
+				String sql = sqls.get(i);
+				if (log.isDebugEnabled()) {
+					log.debug(sql);
+				}
+				result[i] = st.executeUpdate(sql);
+			}
+		} catch (SQLException e) {
+			throw e;
+		}finally{
+			closeStatement(st);
+		}
+		return result;
 	}
 }

@@ -33,6 +33,13 @@ import com.zdawn.util.beans.BeanUtil;
  */
 public class CommonExecutor implements Executor {
 	private static final Logger log = LoggerFactory.getLogger(CommonExecutor.class);
+	
+	private int executeBatchCount = 10;
+	
+	public void setExecuteBatchCount(int executeBatchCount) {
+		this.executeBatchCount = executeBatchCount;
+	}
+
 	/**
 	 * 新增操作
 	 * @param entityName 实体名
@@ -650,11 +657,19 @@ public class CommonExecutor implements Executor {
 		return relValue;
 	}
 
-	public Map<String, Object> getData(String entityName, Object id,
-			SysModel sysModel, Connection con) throws PersistenceException {
+	public Map<String, Object> getData(String entityName, String propertyName,
+			Object id, boolean excludeChildEntity, SysModel sysModel,
+			Connection con) throws PersistenceException {
 		Entity mainEntity = sysModel.findEntityByName(entityName);
 		Property unique = mainEntity.findUniqueColumnProperty();
-		Map<String, Object> data = getEntity(mainEntity,id,con);
+		Property condition = unique;
+		if(propertyName!=null){
+			condition = mainEntity.findPropertyByName(propertyName);
+			if(condition==null) throw new PersistenceException("","property not exist propertyName="+propertyName);
+		}
+		Map<String, Object> data = getEntity(mainEntity,condition,id,con);
+		if(data==null) return null;
+		if(excludeChildEntity) return data;
 		List<Relation> relationList = mainEntity.getRelations();
 		for (Relation relation : relationList) {
 			Entity entity = sysModel.findEntityByName(relation.getEntityName());
@@ -675,11 +690,19 @@ public class CommonExecutor implements Executor {
 		return data;
 	}
 	
-	public <T> T get(Class<T> clazz,String entityName, Object id, SysModel sysModel,
+	public <T> T get(Class<T> clazz, String entityName, String propertyName,
+			Object id, boolean excludeChildEntity, SysModel sysModel,
 			Connection con) throws PersistenceException {
 		Entity mainEntity = sysModel.findEntityByName(entityName);
 		Property unique = mainEntity.findUniqueColumnProperty();
-		Map<String, Object> data = getEntity(mainEntity,id,con);
+		Property condition = unique;
+		if(propertyName!=null){
+			condition = mainEntity.findPropertyByName(propertyName);
+			if(condition==null) throw new PersistenceException("","property not exist propertyName="+propertyName);
+		}
+		Map<String, Object> data = getEntity(mainEntity,condition,id,con);
+		if(data==null) return null;
+		if(excludeChildEntity) return BeanUtil.bindBean(clazz,data);
 		List<Relation> relationList = mainEntity.getRelations();
 		for (Relation relation : relationList) {
 			Entity entity = sysModel.findEntityByName(relation.getEntityName());
@@ -774,10 +797,9 @@ public class CommonExecutor implements Executor {
 		return data;
 	}
 
-	private Map<String, Object> getEntity(Entity entity, Object id,
+	private Map<String, Object> getEntity(Entity entity,Property unique, Object id,
 			Connection con) throws PersistenceException{
 		Map<String, Object> data = new HashMap<String, Object>();
-		Property unique = entity.findUniqueColumnProperty();
 		boolean number = TypeUtil.isNumber(unique.getType());
 		String sql = SqlBuilder.createSelectEntitySql(entity,unique,id,number);
 		PreparedStatement ps = null;
@@ -802,6 +824,202 @@ public class CommonExecutor implements Executor {
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
 		}
-		return data;
+		return data.size()==0 ? null:data;
+	}
+
+	@Override
+	public void batchInsertData(String entityName,
+			List<Map<String, Object>> data, SysModel sysModel, Connection con)
+			throws PersistenceException {
+		if(data==null || data.size()==0) throw new PersistenceException("","data is empty");
+		Entity entity = sysModel.findEntityByName(entityName);
+		List<Property> propertyList = new ArrayList<Property>();
+		Map<String, Object> one = data.get(0);
+		for (Map.Entry<String,Object> entry : one.entrySet()) {
+			//collect insert property
+			Property temp = entity.findPropertyByName(entry.getKey());
+			if(temp!=null) propertyList.add(temp);
+		}
+		propertyList = ExecutorHelper.sortEntityProperty(entity, propertyList);
+		Property unique = entity.findUniqueColumnProperty();
+		if(unique.getDefaultValue().equals("auto_increment")){
+			propertyList = SqlBuilder.filterProperty(propertyList,unique.getName());
+		}
+		batchInsertEntityData(entity, propertyList, data, con);
+	}
+	private void batchInsertEntityData(Entity entity,List<Property> propertyList,
+			List<Map<String, Object>> data,
+			Connection con) throws PersistenceException {
+		PreparedStatement ps = null;
+		try {
+			String sql = SqlBuilder.createInsertSql(entity.getTableName(),propertyList);
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = con.prepareStatement(sql);
+			int count = 1;
+			for (Map<String, Object> map : data) {
+				for (int i = 0; i < propertyList.size(); i++){
+					Property property = propertyList.get(i);
+					AbstractType type = TypeUtil.getDataType(property.getType());
+					type.set(ps, map.get(property.getName()), i+1);
+				}
+				count = count +1;
+				ps.addBatch();
+				if(count%executeBatchCount==0) ps.executeBatch();
+			}
+			ps.executeBatch();
+		} catch (SQLException e) {
+			log.error("batchInsertEntity",e);
+		    throw new PersistenceException("",e.getMessage());
+		}finally{
+			JdbcUtils.closeStatement(ps);
+		}
+	}
+	@Override
+	public <T> void batchInsertClazz(String entityName, List<T> data,
+			SysModel sysModel, Connection con) throws PersistenceException {
+		if(data==null || data.size()==0) throw new PersistenceException("","data is empty");
+		Entity entity = sysModel.findEntityByName(entityName);
+		List<Property> propertyList = new ArrayList<Property>();
+		Map<String, Object> one = BeanUtil.transformBeanToMap(data.get(0));
+		for (Map.Entry<String,Object> entry : one.entrySet()) {
+			//collect insert property
+			Property temp = entity.findPropertyByName(entry.getKey());
+			if(temp!=null) propertyList.add(temp);
+		}
+		propertyList = ExecutorHelper.sortEntityProperty(entity, propertyList);
+		Property unique = entity.findUniqueColumnProperty();
+		if(unique.getDefaultValue().equals("auto_increment")){
+			propertyList = SqlBuilder.filterProperty(propertyList,unique.getName());
+		}
+		batchInsertEntityClazz(entity, propertyList, data, con);
+	}
+	private <T> void batchInsertEntityClazz(Entity entity,List<Property> propertyList,
+			List<T> data,Connection con) throws PersistenceException {
+		PreparedStatement ps = null;
+		try {
+			String sql = SqlBuilder.createInsertSql(entity.getTableName(),propertyList);
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = con.prepareStatement(sql);
+			int count = 1;
+			for (T t : data) {
+				Map<String, Object> map = BeanUtil.transformBeanToMap(t);
+				for (int i = 0; i < propertyList.size(); i++){
+					Property property = propertyList.get(i);
+					AbstractType type = TypeUtil.getDataType(property.getType());
+					type.set(ps, map.get(property.getName()), i+1);
+				}
+				count = count +1;
+				ps.addBatch();
+				if(count%executeBatchCount==0) ps.executeBatch();
+			}
+			ps.executeBatch();
+		} catch (SQLException e) {
+			log.error("batchInsertEntityBean",e);
+		    throw new PersistenceException("",e.getMessage());
+		}finally{
+			JdbcUtils.closeStatement(ps);
+		}
+	}
+	@Override
+	public void batchUpdateData(String entityName,
+			List<Map<String, Object>> data, SysModel sysModel, Connection con)
+			throws PersistenceException {
+		if(data==null || data.size()==0) throw new PersistenceException("","data is empty");
+		Entity entity = sysModel.findEntityByName(entityName);
+		Property unique = entity.findUniqueColumnProperty();
+		List<Property> propertyList = new ArrayList<Property>();
+		Map<String, Object> one = data.get(0);
+		for (Map.Entry<String,Object> entry : one.entrySet()) {
+			//collect update property
+			Property temp = entity.findPropertyByName(entry.getKey());
+			if(temp!=null && temp!=unique) propertyList.add(temp);
+		}
+		//update entity
+		propertyList = ExecutorHelper.sortEntityProperty(entity, propertyList);
+		batchUpdateEntityData(entity,unique,propertyList,data,con);
+	}
+	private void batchUpdateEntityData(Entity entity,Property unique,List<Property> propertyList,
+			List<Map<String, Object>> data, Connection con) throws PersistenceException{
+		PreparedStatement ps = null;
+		try {
+			if(unique==null) entity.findUniqueColumnProperty();
+			String sql = SqlBuilder.createUpdateSql(entity.getTableName(),unique,propertyList);
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = con.prepareStatement(sql);
+			int count = 1;
+			for (Map<String, Object> map : data) {
+				for (int i = 0; i < propertyList.size(); i++){
+					Property property = propertyList.get(i);
+					AbstractType type = TypeUtil.getDataType(property.getType());
+					type.set(ps, map.get(property.getName()), i+1);
+				}
+				AbstractType type = TypeUtil.getDataType(unique.getType());
+				type.set(ps, map.get(unique.getName()),propertyList.size()+1);
+				count = count +1;
+				ps.addBatch();
+				if(count%executeBatchCount==0) ps.executeBatch();
+			}
+			ps.executeBatch();
+		} catch (SQLException e) {
+			log.error("batchUpdateEntityData",e);
+		    throw new PersistenceException("",e.getMessage());
+		}finally{
+			JdbcUtils.closeStatement(ps);
+		}
+	}
+	@Override
+	public <T> void batchUpdateClazz(String entityName, List<T> data,
+			SysModel sysModel, Connection con) throws PersistenceException {
+		if(data==null || data.size()==0) throw new PersistenceException("","data is empty");
+		Entity entity = sysModel.findEntityByName(entityName);
+		Property unique = entity.findUniqueColumnProperty();
+		List<Property> propertyList = new ArrayList<Property>();
+		Map<String, Object> one = BeanUtil.transformBeanToMap(data.get(0));
+		for (Map.Entry<String,Object> entry : one.entrySet()) {
+			//collect update property
+			Property temp = entity.findPropertyByName(entry.getKey());
+			if(temp!=null && temp!=unique) propertyList.add(temp);
+		}
+		//update  entity
+		propertyList = ExecutorHelper.sortEntityProperty(entity, propertyList);
+		batchUpdateEntityClazz(entity,unique,propertyList,data,con);
+	}
+	private <T> void batchUpdateEntityClazz(Entity entity,Property unique,
+			List<Property> propertyList,List<T> data, Connection con) throws PersistenceException{
+		PreparedStatement ps = null;
+		try {
+			if(unique==null) entity.findUniqueColumnProperty();
+			String sql = SqlBuilder.createUpdateSql(entity.getTableName(),unique,propertyList);
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
+			ps = con.prepareStatement(sql);
+			int count = 1;
+			for (T t : data) {
+				Map<String, Object> map = BeanUtil.transformBeanToMap(t);
+				for (int i = 0; i < propertyList.size(); i++){
+					Property property = propertyList.get(i);
+					AbstractType type = TypeUtil.getDataType(property.getType());
+					type.set(ps, map.get(property.getName()), i+1);
+				}
+				AbstractType type = TypeUtil.getDataType(unique.getType());
+				type.set(ps, map.get(unique.getName()),propertyList.size()+1);
+				count = count +1;
+				ps.addBatch();
+				if(count%executeBatchCount==0) ps.executeBatch();
+			}
+			ps.executeBatch();
+		} catch (SQLException e) {
+			log.error("batchUpdateEntityClazz",e);
+		    throw new PersistenceException("",e.getMessage());
+		}finally{
+			JdbcUtils.closeStatement(ps);
+		}
 	}
 }
