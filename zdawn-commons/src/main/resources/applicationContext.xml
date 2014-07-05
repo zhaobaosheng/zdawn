@@ -30,10 +30,13 @@
 		<property name="checkoutTimeout" value="${jdbc.checkoutTimeout}" />
 	</bean>
 	
-	<bean id="queryExecutor" class="com.zdawn.commons.sqlquery.domain.QueryExecutor">
+	<bean id="sqlQuery" class="com.zdawn.commons.sqlquery.domain.DefaultSqlQuery">
+		<property name="queryExecutor" ref="queryExecutor" />
 		<property name="dataSource" ref="dataSource" />
-		<property name="pagingSqlDecorator" ref="pagingSqlDecorator" />
 	</bean>
+	<bean id="queryExecutor" class="com.zdawn.commons.sqlquery.domain.QueryExecutor">
+       	<constructor-arg index="0" ref="pagingSqlDecorator" />
+    </bean>
 	
 	<bean id="pagingSqlDecorator" class="com.zdawn.commons.jdbc.OraclePagingSqlDecorator"/>	
 	
@@ -49,7 +52,7 @@
     <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource" />
 	</bean>
-	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+	<tx:annotation-driven transaction-manager="transactionManager" />
 	<tx:advice id="txAdvice" transaction-manager="transactionManager">
 		<tx:attributes>
 			<tx:method name="save*" propagation="REQUIRED" rollback-for="com.zdawn.commons.sysmodel.persistence.PersistenceException" />
@@ -59,7 +62,7 @@
 			<tx:method name="*" propagation="SUPPORTS" read-only="true" />
 		</tx:attributes>
 	</tx:advice>
-	<aop:config proxy-target-class="true">
+	<aop:config>
 		<aop:pointcut id="baseServiceOperations" expression="execution(public * com.zdawn.commons.sysmodel.*.*(..))" />
 		<aop:advisor advice-ref="txAdvice" pointcut-ref="baseServiceOperations" order="1"/>
 	</aop:config>

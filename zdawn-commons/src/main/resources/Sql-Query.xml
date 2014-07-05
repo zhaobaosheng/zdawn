@@ -15,7 +15,7 @@
 	</ResultMapper>
 	<QueryConfig code="唯一标识" name="中文名称" paging="是否分页 true or false" resultMapper="引用resultMap的id属性">
 		<ParameterMapper>
-			<parameter column="数据库字段名" property="输入参数表识" type="java数据类型" empty="true or false" toStringformat=""/>
+			<parameter column="数据库字段名" property="输入参数标识" type="java数据类型" empty="true or false" toStringformat=""/>
 		</ParameterMapper>
 		<SelectSql>
 		  查询sql内容
@@ -36,6 +36,7 @@
 		<ParameterMapper>
 			<parameter column="org_name" property="orgName" type="java.lang.String" empty="false" toStringformat=""/>
 			<parameter column="birthday" property="birthday" type="java.lang.String" empty="false" toStringformat="yyyy-MM-dd"/>
+			<parameter column="name" property="name" type="java.lang.String" empty="true" toStringformat=""/>
 		</ParameterMapper>
 		<SelectSql>
 			select eap_org.org_id,

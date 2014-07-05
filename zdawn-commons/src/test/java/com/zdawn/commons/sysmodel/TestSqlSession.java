@@ -30,18 +30,18 @@ public class TestSqlSession extends TestCase {
 		TestSqlSession testSqlSession = new TestSqlSession();
 		testSqlSession.initApplicationContext();
 		//Map
-//		testSqlSession.testSaveMapUser();
-//		testSqlSession.testUpdateMapUser();
-//		testSqlSession.testDeleteUser();
-		//JavaBean
-		testSqlSession.testSaveEapUser();
-		testSqlSession.testUpdateEapUser();
+		testSqlSession.testSaveMapUser();
+		testSqlSession.testUpdateMapUser();
 		testSqlSession.testDeleteUser();
+		//JavaBean
+//		testSqlSession.testSaveEapUser();
+//		testSqlSession.testUpdateEapUser();
+//		testSqlSession.testDeleteUser();
 	}
 
 	public void testSaveMapData() {
 		Map<String,String> para = new HashMap<String, String>();
-		SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+		SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 		try {
 			para.put("fdObjectid",UUID.randomUUID().toString());
 			para.put("userId","zhaoxusheng");
@@ -55,7 +55,7 @@ public class TestSqlSession extends TestCase {
 		} catch (PersistenceException e) {}
 	}
 	public void testSaveMapUser(){
-		SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+		SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 		try {
 			Map<String,String> para = new HashMap<String, String>();
 			para.put("fdObjectid","EapUser_1");
@@ -99,7 +99,7 @@ public class TestSqlSession extends TestCase {
 	
 	public void testUpdateMapUser(){
 		try {
-			SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+			SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 			Map<String, Object> data = sysUserMgr.getMapUser("EapUser_1");
 			data.put("password", "222222");
 			Map<String, Object> orgAmin =(Map<String, Object>) data.get("eapOrgAdminRel");
@@ -122,7 +122,7 @@ public class TestSqlSession extends TestCase {
 	}
 	public void testSaveEapUser(){
 		try {
-			SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+			SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 			EapUser user = new EapUser();
 			user.setFdObjectid("EapUser_1");
 			user.setUserId("zhaonuannuan");
@@ -169,7 +169,7 @@ public class TestSqlSession extends TestCase {
 	}
 	public void testUpdateEapUser(){
 		try {
-			SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+			SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 			EapUser user =  sysUserMgr.getEapUser(EapUser.class, "EapUser_1");
 			user.setPassword("222222");
 			user.getEapOrgAdminRel().setIdLevel(new Short("12"));
@@ -189,7 +189,7 @@ public class TestSqlSession extends TestCase {
 	}
 	public void testDeleteUser(){
 		try {
-			SysUserMgrImpl sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgrImpl.class);
+			SysUserMgr sysUserMgr= ctx.getBean("sysUserMgr",SysUserMgr.class);
 			 sysUserMgr.deleteData("EapUser_1");
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -21,6 +21,9 @@ public class ReplacingToken implements Token {
 	@Override
 	public String transform(Map<String, Object> data, ParameterMapper mapper) {
 		ParameterItem item = mapper.getParameterItem(placeholderKey);
+		if(item==null){
+			System.out.println("placeholderKey("+placeholderKey+")  not find parameter config");
+		}
 		return ConvertUtil.convertToString(data.get(placeholderKey),item.getToStringformat());
 	}
 	public String getPlaceholderKey() {

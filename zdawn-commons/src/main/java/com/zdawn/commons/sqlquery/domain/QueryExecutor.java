@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.sql.DataSource;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,16 +54,20 @@ public class QueryExecutor {
 	 */
 	private PagingSqlDecorator pagingSqlDecorator = null;
 	
-	private DataSource dataSource = null;
 	/**
 	 * 缺省构造函数-装载查询配置
 	 */
-	public QueryExecutor(){
-		MetaQueryFactory.loadQueryConfigFromClassPathByRegexFileName(queryRegxFileName);
+	public QueryExecutor(String queryRegxFileName,PagingSqlDecorator pagingSqlDecorator){
+		if(queryRegxFileName !=null) this.queryRegxFileName = queryRegxFileName;
+		this.pagingSqlDecorator= pagingSqlDecorator;
+		MetaQueryFactory.loadQueryConfigFromClassPathByRegexFileName(this.queryRegxFileName );
 		metaQuery = MetaQueryFactory.getMetaQuery();
 	}
+	public QueryExecutor(PagingSqlDecorator pagingSqlDecorator){
+		this(null,pagingSqlDecorator);
+	}
 
-	public List<Map<String, String>> queryStringMapData(String code,
+	public List<Map<String, String>> queryStringMapData(Connection connection,String code,
 			Map<String, Object> para) throws Exception {
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(queryConfig.isPaging()) throw new Exception("should invoke paging method");
@@ -76,9 +78,9 @@ public class QueryExecutor {
 		//create sql
 		String sql = transformSql(selectSqlToken,queryConfig.getParameterMapper(),para);
 		List<QuestionFixToken> tokenList = getQuestionFixTokenList(selectSqlToken,para);
-		return searchStringMapData(sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
+		return searchStringMapData(connection,sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
 	}
-	public PageDataSet<Map<String,String>> queryPagingStringMapData(String code,
+	public PageDataSet<Map<String,String>> queryPagingStringMapData(Connection connection,String code,
 			Map<String, Object> para) throws Exception{
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(!queryConfig.isPaging()) throw new Exception("should invoke nonpaging method");
@@ -105,19 +107,19 @@ public class QueryExecutor {
 		int total = 0;
 		if(countSqlToken==null){
 			String countSql = "select count(*) from ("+sql+") T";
-			total = getTotalCount(countSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+			total = getTotalCount(connection,countSql,questionTokenList,queryConfig.getParameterMapper(),para);
 		}else{
 			String countSql = transformSql(countSqlToken,queryConfig.getParameterMapper(),para);
 			List<QuestionFixToken> countTokenList = getQuestionFixTokenList(countSqlToken,para);
-			total = getTotalCount(countSql,countTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+			total = getTotalCount(connection,countSql,countTokenList,queryConfig.getParameterMapper(),para);
 		}
 		String pageSql = pagingSqlDecorator.decoratePagingSql(sql,limit,total,currentPage);
-		List<Map<String, String>> data = searchStringMapData(pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+		List<Map<String, String>> data = searchStringMapData(connection,pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
 		PageDataSet<Map<String, String>> dataSet = new PageDataSet<Map<String,String>>(data);
 		dataSet.setTotal(total);
 		return dataSet;
 	}
-	public List<Map<String,Object>> queryObjectMapData(String code,
+	public List<Map<String,Object>> queryObjectMapData(Connection connection,String code,
 			Map<String, Object> para) throws Exception {
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(queryConfig.isPaging()) throw new Exception("should invoke paging method");
@@ -131,18 +133,18 @@ public class QueryExecutor {
 		//create sql
 		String sql = transformSql(selectSqlToken,queryConfig.getParameterMapper(),para);
 		List<QuestionFixToken> tokenList = getQuestionFixTokenList(selectSqlToken,para);
-		return searchObjectMapData(sql, tokenList, queryConfig.getParameterMapper(),resultMapper,para);
+		return searchObjectMapData(connection,sql, tokenList, queryConfig.getParameterMapper(),resultMapper,para);
 	}
-	public <T> List<T> queryObjectMapData(String code,
+	public <T> List<T> queryObjectMapData(Connection connection,String code,
 			Map<String, Object> para,Class<T> clazz) throws Exception {
-		List<Map<String,Object>> dataSet = queryObjectMapData(code,para);
+		List<Map<String,Object>> dataSet = queryObjectMapData(connection,code,para);
 		List<T> dataT = new ArrayList<T>();
 		for (Map<String, Object> map : dataSet) {
 			dataT.add(BeanUtil.bindBean(clazz, map));
 		}
 		return dataT;
 	}
-	public PageDataSet<Map<String,Object>> queryPagingObjectMapData(String code,
+	public PageDataSet<Map<String,Object>> queryPagingObjectMapData(Connection connection,String code,
 			Map<String, Object> para) throws Exception{
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(!queryConfig.isPaging()) throw new Exception("should invoke nonpaging method");
@@ -172,21 +174,21 @@ public class QueryExecutor {
 		int total = 0;
 		if(countSqlToken==null){
 			String countSql = "select count(*) from ("+sql+") T";
-			total = getTotalCount(countSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+			total = getTotalCount(connection,countSql,questionTokenList,queryConfig.getParameterMapper(),para);
 		}else{
 			String countSql = transformSql(countSqlToken,queryConfig.getParameterMapper(),para);
 			List<QuestionFixToken> countTokenList = getQuestionFixTokenList(countSqlToken,para);
-			total = getTotalCount(countSql,countTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+			total = getTotalCount(connection,countSql,countTokenList,queryConfig.getParameterMapper(),para);
 		}
 		String pageSql = pagingSqlDecorator.decoratePagingSql(sql,limit,total,currentPage);
-		List<Map<String,Object>> data = searchObjectMapData(pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
+		List<Map<String,Object>> data = searchObjectMapData(connection,pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
 		PageDataSet<Map<String,Object>> dataSet = new PageDataSet<Map<String,Object>>(data);
 		dataSet.setTotal(total);
 		return dataSet;
 	}
-	public <T> PageDataSet<T> queryPagingObjectMapData(String code,
+	public <T> PageDataSet<T> queryPagingObjectMapData(Connection connection,String code,
 			Map<String, Object> para,Class<T> clazz) throws Exception{
-		PageDataSet<Map<String,Object>> dataSet = queryPagingObjectMapData(code,para);
+		PageDataSet<Map<String,Object>> dataSet = queryPagingObjectMapData(connection,code,para);
 		PageDataSet<T> dataT = new PageDataSet<T>();
 		for (Map<String, Object> map : dataSet) {
 			dataT.add(BeanUtil.bindBean(clazz, map));
@@ -194,7 +196,7 @@ public class QueryExecutor {
 		dataT.setTotal(dataSet.getTotal());
 		return dataT;
 	}
-	public List<String[]> queryStringArrayData(String code,
+	public List<String[]> queryStringArrayData(Connection connection,String code,
 			Map<String, Object> para) throws Exception {
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(queryConfig.isPaging()) throw new Exception("should invoke paging method");
@@ -205,9 +207,9 @@ public class QueryExecutor {
 		//create sql
 		String sql = transformSql(selectSqlToken,queryConfig.getParameterMapper(),para);
 		List<QuestionFixToken> tokenList = getQuestionFixTokenList(selectSqlToken,para);
-		return searchStringArrayData(sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
+		return searchStringArrayData(connection,sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
 	}
-	public List<Object[]> queryObjectArrayData(String code,
+	public List<Object[]> queryObjectArrayData(Connection connection,String code,
 			Map<String, Object> para) throws Exception {
 		QueryConfig queryConfig = gainAndValidateQueryConfig(code, para);
 		if(queryConfig.isPaging()) throw new Exception("should invoke paging method");
@@ -221,7 +223,7 @@ public class QueryExecutor {
 		//create sql
 		String sql = transformSql(selectSqlToken,queryConfig.getParameterMapper(),para);
 		List<QuestionFixToken> tokenList = getQuestionFixTokenList(selectSqlToken,para);
-		return searchObjectArrayData(sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
+		return searchObjectArrayData(connection,sql, tokenList, queryConfig.getParameterMapper(), resultMapper, para);
 	}
 	private QueryConfig gainAndValidateQueryConfig(String code,
 			Map<String, Object> para) throws Exception {
@@ -286,17 +288,15 @@ public class QueryExecutor {
 		}
 		return list;
 	}
-	private int getTotalCount(String sql,
-			List<QuestionFixToken> tokenList, ParameterMapper parameterMapper,
-			ResultMapper resultMapper, Map<String, Object> para)
-			throws SQLException {
-		Connection connection = null;
+	private int getTotalCount(Connection connection,String sql,List<QuestionFixToken> tokenList,
+			ParameterMapper parameterMapper, Map<String, Object> para) throws SQLException {
 		PreparedStatement ps = null;
 		ResultSet resultset = null;
 		int count = 0;
 		try {
-			log.debug(sql);
-			connection = dataSource.getConnection();
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
 			ps = connection.prepareStatement(sql);
 			for (int i = 0; i < tokenList.size(); i++) {
 				QuestionFixToken token = tokenList.get(i);
@@ -312,21 +312,20 @@ public class QueryExecutor {
 		}finally{
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
-			JdbcUtils.closeConnection(connection);
 		}
 		return count;
 	}
-	private List<Map<String, String>> searchStringMapData(String sql,
+	private List<Map<String, String>> searchStringMapData(Connection connection,String sql,
 			List<QuestionFixToken> tokenList, ParameterMapper parameterMapper,
 			ResultMapper resultMapper, Map<String, Object> para)
 			throws SQLException {
 		List<Map<String, String>> dataSet = new ArrayList<Map<String,String>>();
-		Connection connection = null;
 		PreparedStatement ps = null;
 	    ResultSet resultset = null;
 		try {
-			log.debug(sql);
-			connection = dataSource.getConnection();
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
 			ps = connection.prepareStatement(sql);
 			for (int i = 0; i < tokenList.size(); i++) {
 				QuestionFixToken token = tokenList.get(i);
@@ -354,21 +353,20 @@ public class QueryExecutor {
 		}finally{
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
-			JdbcUtils.closeConnection(connection);
 		}
 		return dataSet;
 	}
-	private List<Map<String,Object>> searchObjectMapData(String sql,
+	private List<Map<String,Object>> searchObjectMapData(Connection connection,String sql,
 			List<QuestionFixToken> tokenList, ParameterMapper parameterMapper,
 			ResultMapper resultMapper, Map<String, Object> para)
 			throws SQLException {
 		List<Map<String,Object>> dataSet = new ArrayList<Map<String,Object>>();
-		Connection connection = null;
 		PreparedStatement ps = null;
 	    ResultSet resultset = null;
 		try {
-			log.debug(sql);
-			connection = dataSource.getConnection();
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
 			ps = connection.prepareStatement(sql);
 			for (int i = 0; i < tokenList.size(); i++) {
 				QuestionFixToken token = tokenList.get(i);
@@ -385,21 +383,20 @@ public class QueryExecutor {
 		}finally{
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
-			JdbcUtils.closeConnection(connection);
 		}
 		return dataSet;
 	}
-	private List<String[]> searchStringArrayData(String sql,
+	private List<String[]> searchStringArrayData(Connection connection,String sql,
 			List<QuestionFixToken> tokenList, ParameterMapper parameterMapper,
 			ResultMapper resultMapper, Map<String, Object> para)
 			throws SQLException {
 		List<String[]> dataSet = new ArrayList<String[]>();
-		Connection connection = null;
 		PreparedStatement ps = null;
 	    ResultSet resultset = null;
 		try {
-			log.debug(sql);
-			connection = dataSource.getConnection();
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
 			ps = connection.prepareStatement(sql);
 			for (int i = 0; i < tokenList.size(); i++) {
 				QuestionFixToken token = tokenList.get(i);
@@ -431,21 +428,20 @@ public class QueryExecutor {
 		}finally{
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
-			JdbcUtils.closeConnection(connection);
 		}
 		return dataSet;
 	}
-	private List<Object[]> searchObjectArrayData(String sql,
+	private List<Object[]> searchObjectArrayData(Connection connection,String sql,
 			List<QuestionFixToken> tokenList, ParameterMapper parameterMapper,
 			ResultMapper resultMapper, Map<String, Object> para)
 			throws SQLException {
 		List<Object[]> dataSet = new ArrayList<Object[]>();
-		Connection connection = null;
 		PreparedStatement ps = null;
 	    ResultSet resultset = null;
 		try {
-			log.debug(sql);
-			connection = dataSource.getConnection();
+			if (log.isDebugEnabled()) {
+				log.debug(sql);
+			}
 			ps = connection.prepareStatement(sql);
 			for (int i = 0; i < tokenList.size(); i++) {
 				QuestionFixToken token = tokenList.get(i);
@@ -462,7 +458,6 @@ public class QueryExecutor {
 		}finally{
 			JdbcUtils.closeResultSet(resultset);
 			JdbcUtils.closeStatement(ps);
-			JdbcUtils.closeConnection(connection);
 		}
 		return dataSet;
 	}
@@ -473,7 +468,8 @@ public class QueryExecutor {
 		for (ResultItem resultItem : resultItemList) {
 			String columnLabel = resultItem.getColumn().length() == 0 ? 
 					resultItem.getProperty() : resultItem.getColumn();
-			map.put(columnLabel,extractColumnData(resultset,resultItem.getType(),columnLabel));
+			AbstractType abstractType = TypeUtil.getDataType(resultItem.getType());
+			map.put(columnLabel,abstractType.get(resultset, columnLabel));
 		}
 		return map;
 	}
@@ -530,34 +526,10 @@ public class QueryExecutor {
 			ResultItem resultItem = resultItemList.get(i);
 			String columnLabel = resultItem.getColumn().length() == 0 ? 
 					resultItem.getProperty() : resultItem.getColumn();
-			row[i] = extractColumnData(resultset,resultItem.getType(),columnLabel);
+			AbstractType abstractType = TypeUtil.getDataType(resultItem.getType());
+			row[i] = abstractType.get(resultset, columnLabel);
 		}
 		return row;
-	}
-	private Object extractColumnData(ResultSet resultset, String type,
-			String columnLabel) throws SQLException {
-		Object obj = null;
-		if("java.lang.String".equals(type)){
-			obj = resultset.getString(columnLabel);
-		}else if("java.lang.Integer".equals(type)){
-			obj = resultset.getInt(columnLabel);
-		}else if("java.util.Date".equals(type)
-				||"java.sql.Date".equals(type)){
-			obj = resultset.getDate(columnLabel);
-		}else if("java.sql.Timestamp".equals(type)){
-			obj = resultset.getTimestamp(columnLabel);
-		}else if("java.lang.Long".equals(type)){
-			obj = resultset.getLong(columnLabel);
-		}else if("java.lang.Float".equals(type)){
-			obj = resultset.getFloat(columnLabel);
-		}else if("java.lang.Double".equals(type)){
-			obj = resultset.getDouble(columnLabel);
-		}else if("java.math.BigDecimal".equals(type)){
-			obj = resultset.getBigDecimal(columnLabel);
-		}else{
-			throw new SQLException("not support type");
-		}
-		return obj;
 	}
 	private void setParameterData(PreparedStatement ps, int index,
 			ParameterItem item, Object value) throws SQLException{
@@ -573,7 +545,5 @@ public class QueryExecutor {
 	public void setPagingSqlDecorator(PagingSqlDecorator pagingSqlDecorator) {
 		this.pagingSqlDecorator = pagingSqlDecorator;
 	}
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
+
 }
