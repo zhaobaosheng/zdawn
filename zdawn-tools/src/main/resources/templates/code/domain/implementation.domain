@@ -1,0 +1,574 @@
+<#include "../lib/indentLine.ftl">
+<#include "../lib/getJavaImportEntity.ftl">
+<#include "../lib/getEntityClazzName.ftl">
+<#include "../lib/getEntityPKProperty.ftl">
+<#include "../lib/getRefPropertyNameByEntityName.ftl">
+<#include "../lib/getEntityPropertyByPropertyName.ftl">
+<#include "../lib/getCustomParameter.ftl">
+<#include "exceptPropertyByNames.ftl">
+<#include "handleEntityValidator.ftl">
+<#include "haveEntityValidator.ftl">
+<#include "autoIncrementPK.ftl">
+<#include "haveHandleEntityByEntityName.ftl">
+<#include "collectChildEntityNames.ftl">
+package ${package};
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import com.zdawn.DawnException;
+import com.zdawn.commons.jdbc.keygen.IDGenerator;
+import com.zdawn.commons.sysmodel.persistence.spring.SqlSessionTemplate;
+import com.zdawn.util.validator.ValidatorUtil;
+import com.zdawn.commons.dict.DataDictUtil;
+
+<@getJavaImportEntity packagePath methodEntityMap["nonceClazzEntityList"] methodEntityMap["otherClazzEntityList"] />
+<#assign clazzInterfaceName = metaClazz.name?cap_first>
+/**
+ * ${metaClazz.nameCn} 实现类
+ */ 
+@Service("${clazzInterfaceName?uncap_first}")
+public class ${clazzInterfaceName}Impl implements ${clazzInterfaceName}{
+	/**
+	 * SqlSession模板
+	 */
+	@Resource(name="${getCustomParameter(customParameters,metaClazz.name+"_sqlSessionTemplate","sqlSessionTemplate")}")
+	private SqlSessionTemplate sqlSessionTemplate;
+	/**
+	 * ID标识生成接口
+	 */
+	@Resource(name="${getCustomParameter(customParameters,metaClazz.name+"_idGenerator","idGenerator")}")
+	private IDGenerator generator;
+<#if metaClazz.methods?exists>
+<#list metaClazz.methods as metaMethod>
+    <#if methodEntityMap[metaMethod.name+"nonceEntity"]??>
+		<#assign _methodName = metaMethod.name?uncap_first,
+		         entityName = getEntityClazzName(methodEntityMap[metaMethod.name+"nonceEntity"]),
+		         entityCname = methodEntityMap[metaMethod.name+"nonceEntity"].description,
+		         pkProperty = getEntityPKProperty(methodEntityMap[metaMethod.name+"nonceEntity"]),
+		         noncePkName = pkProperty.name?cap_first,
+			 	 entityNameLower = entityName?uncap_first>
+	<#else>
+		<#assign _methodName = metaMethod.name?uncap_first,
+		         entityName = "Object",
+		         entityCname = "",
+			 	 entityNameLower = entityName?uncap_first>
+	</#if>
+	
+	<#if metaMethod.type = "create" && metaMethod.usingClazz>
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException{
+		try{
+			<@handleEntityValidator methodEntityMap[metaMethod.name+"nonceEntity"] methodEntityMap[metaMethod.name+"aboutEntityList"] methodEntityMap[metaMethod.name+"subEntityList"] metaMethod.validators "DawnException" 3 />
+			//检查并设置实体主键
+			<#if pkProperty.type="java.lang.String" >
+			if(${entityNameLower}.get${noncePkName}()==null || ${entityNameLower}.get${noncePkName}().equals("")){
+				${entityNameLower}.set${noncePkName}(generator.generateString("${methodEntityMap[metaMethod.name+"nonceEntity"].name}"));
+			}
+			<#elseif pkProperty.type="java.lang.Integer" && autoIncrementPK(pkProperty)="false">
+			if(${entityNameLower}.get${noncePkName}()==null){
+				${entityNameLower}.set${noncePkName}(generator.generateInteger("${methodEntityMap[metaMethod.name+"nonceEntity"].name}"));
+			}
+			<#elseif  pkProperty.type="java.lang.Long" && autoIncrementPK(pkProperty)="false">
+			if(${entityNameLower}.get${noncePkName}()==null){
+				${entityNameLower}.set${noncePkName}(generator.generateLong("${methodEntityMap[metaMethod.name+"nonceEntity"].name}"));
+			}
+			</#if>
+			<#--相关实体设置主键 -->
+			<#list methodEntityMap[metaMethod.name+"aboutEntityList"] as aboutEntity>
+			<#assign aboutEntityName = getEntityClazzName(aboutEntity),
+			         aboutEntityNameLower = aboutEntityName?uncap_first,
+			         aboutPKProperty = getEntityPKProperty(aboutEntity),
+					 aboutEntityPKName = aboutPKProperty.name?cap_first>
+			//设置${aboutEntityName}实体主键
+			${aboutEntityName} ${aboutEntityNameLower} = ${entityNameLower}.get${aboutEntityName}();
+			if(${aboutEntityNameLower}!=null){
+				<#if aboutPKProperty.type="java.lang.String" >
+				if(${aboutEntityNameLower}.get${aboutEntityPKName}()==null || ${aboutEntityNameLower}.get${aboutEntityPKName}().equals("")){
+					${aboutEntityNameLower}.set${aboutEntityPKName}(generator.generateString("${aboutEntity.name}"));
+				}
+				<#elseif aboutPKProperty.type="java.lang.Integer" && autoIncrementPK(pkProperty)="false">
+				if(${aboutEntityNameLower}.get${aboutEntityPKName}()==null){
+					${aboutEntityNameLower}.set${aboutEntityPKName}(generator.generateInteger("${aboutEntity.name}"));
+				}
+				<#elseif  aboutPKProperty.type="java.lang.Long" && autoIncrementPK(aboutPKProperty)="false">
+				if(${aboutEntityNameLower}.get${aboutEntityPKName}()==null){
+					${aboutEntityNameLower}.set${aboutEntityPKName}(generator.generateLong("${aboutEntity.name}"));
+				}
+				</#if>
+			}
+			</#list>
+			<#--子实体设置主键 -->
+			<#list methodEntityMap[metaMethod.name+"subEntityList"] as subEntity>
+			<#assign subEntityName = getEntityClazzName(subEntity),
+			         subEntityNameLower = subEntityName?uncap_first,
+			         subPKProperty = getEntityPKProperty(subEntity),
+					 subEntityPKName = subPKProperty.name?cap_first>
+			//设置${subEntityName}实体主键
+			List<${subEntityName}> ${subEntityNameLower}List = ${entityNameLower}.get${subEntityName}List();
+			if(${subEntityNameLower}List!=null){
+				for(${subEntityName} ${subEntityNameLower}:${subEntityNameLower}List){
+					<#if subPKProperty.type="java.lang.String" >
+					if(${subEntityNameLower}.get${subEntityPKName}()==null || ${subEntityNameLower}.get${subEntityPKName}().equals("")){
+						${subEntityNameLower}.set${subEntityPKName}(generator.generateString("${subEntity.name}"));
+					}
+					<#elseif subPKProperty.type="java.lang.Integer" && autoIncrementPK(subPKProperty)="false">
+					if(${subEntityNameLower}.get${subEntityPKName}()==null){
+						${subEntityNameLower}.set${subEntityPKName}(generator.generateInteger("${subEntity.name}"));
+					}
+					<#elseif  aboutPKProperty.type="java.lang.Long" && autoIncrementPK(aboutPKProperty)="false">
+					if(${subEntityNameLower}.get${subEntityPKName}()==null){
+						${subEntityNameLower}.set${subEntityPKName}(generator.generateLong("${subEntity.name}"));
+					}
+					</#if>
+				}
+			}
+			</#list>
+			<#assign createDateTime = getEntityPropertyByPropertyName(methodEntityMap[metaMethod.name+"nonceEntity"].properties,getCustomParameter(customParameters,methodEntityMap[metaMethod.name+"nonceEntity"].name+"_createDateTime","createDateTime")),
+	    		     createUser = getEntityPropertyByPropertyName(methodEntityMap[metaMethod.name+"nonceEntity"].properties,getCustomParameter(customParameters,methodEntityMap[metaMethod.name+"nonceEntity"].name+"_createUser","createUser"))>
+			<#if createDateTime !="" || createUser !="">
+			//设置创建人和创建时间
+			set${entityName}CreateInfoFor${_methodName?cap_first}(${entityNameLower},context);
+			</#if>
+			//保存对象
+			sqlSessionTemplate.save("${methodEntityMap[metaMethod.name+"nonceEntity"].name}",${entityNameLower});
+		}catch (DawnException e) {
+			throw e;
+		}catch (Exception e) {
+			throw new DawnException("error","出现数据异常,原因"+e.getMessage());
+		}
+		return ${entityNameLower};
+	}
+	
+	<#if createDateTime !="" || createUser !="">
+	//设置创建人和创建时间
+	private void set${entityName}CreateInfoFor${_methodName?cap_first}(${entityName} ${entityNameLower},Map<String,Object> context){
+		Map<String,String> userInfo = (Map<String,String>)context.get("userInfo");
+		String createUser = userInfo==null ? "":userInfo.get("userName");
+		<#if createDateTime !="">
+		${entityNameLower}.set${createDateTime.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+		</#if>
+		<#if createUser !="">
+		if(${entityNameLower}.get${createUser.name?cap_first}()==null || ${entityNameLower}.get${createUser.name?cap_first}().equals("")){
+			${entityNameLower}.set${createUser.name?cap_first}(createUser);
+		}
+		</#if>
+		<#list methodEntityMap[metaMethod.name+"aboutEntityList"] as aboutEntity>
+		<#assign aboutEntityName = getEntityClazzName(aboutEntity),
+		         aboutEntityNameLower = aboutEntityName?uncap_first,
+				 createDateTimeTemp = getEntityPropertyByPropertyName(aboutEntity.properties,getCustomParameter(customParameters,aboutEntity.name+"_createDateTime","createDateTime")),
+	    		 createUserTemp = getEntityPropertyByPropertyName(aboutEntity.properties,getCustomParameter(customParameters,aboutEntity.name+"_createUser","createUser"))>
+		<#if createDateTimeTemp !="" || createUserTemp !="">
+		//设置${aboutEntityName}
+		${aboutEntityName} ${aboutEntityNameLower} = ${entityNameLower}.get${aboutEntityName}();
+		if(${aboutEntityNameLower}!=null){
+			<#if createDateTimeTemp !="">
+			${aboutEntityNameLower}.set${createDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+			</#if>
+			<#if createUserTemp !="">
+			if(${aboutEntityNameLower}.get${createUserTemp.name?cap_first}()==null || ${aboutEntityNameLower}.get${createUserTemp.name?cap_first}().equals("")){
+				${aboutEntityNameLower}.set${createUserTemp.name?cap_first}(createUser);
+			}
+			</#if>
+		}
+		</#if>
+		</#list>
+		<#list methodEntityMap[metaMethod.name+"subEntityList"] as subEntity>
+		<#assign subEntityName = getEntityClazzName(subEntity),
+		         subEntityNameLower = subEntityName?uncap_first,
+				 createDateTimeTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createDateTime","createDateTime")),
+	    		 createUserTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createUser","createUser"))>
+		<#if createDateTimeTemp !="" || createUserTemp !="">
+		//设置${subEntityName}实体
+		List<${subEntityName}> ${subEntityNameLower}List = ${entityNameLower}.get${subEntityName}List();
+		if(${subEntityNameLower}List!=null){
+			for(${subEntityName} ${subEntityNameLower}:${subEntityNameLower}List){
+				<#if createDateTimeTemp !="">
+				${subEntityNameLower}.set${createDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+				</#if>
+				<#if createUserTemp !="">
+				if(${subEntityNameLower}.get${createUserTemp.name?cap_first}()==null || ${subEntityNameLower}.get${createUserTemp.name?cap_first}().equals("")){
+					${subEntityNameLower}.set${createUserTemp.name?cap_first}(createUser);
+				}
+				</#if>
+			}
+		}
+		</#if>
+		</#list>
+	}
+	</#if>
+
+	<#elseif metaMethod.type = "update" && metaMethod.usingClazz>
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException{
+		${entityName} old${entityName} = null;
+		try{
+			//检查当前实体主键不能为空
+			<#if pkProperty.type="java.lang.String" >
+			if(${entityNameLower}.get${noncePkName}()==null || ${entityNameLower}.get${noncePkName}().equals("")){
+				throw new DawnException ("${entityName}.${noncePkName?uncap_first}","实体对象唯一标识不存在");
+			}
+			<#else>
+			if(${entityNameLower}.get${noncePkName}()==null){
+				throw new DawnException ("${entityName}.${noncePkName?uncap_first}","实体对象唯一标识不存在");
+			}
+			</#if>
+			//从数据库获取对象
+			<#assign entityNames=collectChildEntityNames(methodEntityMap[metaMethod.name+"aboutEntityList"],methodEntityMap[metaMethod.name+"subEntityList"])>
+			<#if entityNames="">
+			old${entityName} = sqlSessionTemplate.get(${entityName}.class,"${methodEntityMap[metaMethod.name+"nonceEntity"].name}",${entityNameLower}.get${noncePkName}(),true);
+			<#else>
+			old${entityName} = sqlSessionTemplate.get(${entityName}.class,"${methodEntityMap[metaMethod.name+"nonceEntity"].name}",${entityNameLower}.get${noncePkName}(),${entityNames});
+			</#if>
+			//复制传入对象属性至db获取对象
+			copy${entityName}EdtPropertyToDBEntityFor${_methodName?cap_first}(old${entityName},${entityNameLower},context);
+			<@handleEntityValidator methodEntityMap[metaMethod.name+"nonceEntity"] methodEntityMap[metaMethod.name+"aboutEntityList"] methodEntityMap[metaMethod.name+"subEntityList"] metaMethod.validators "DawnException" 3 />
+			<#assign modifyDateTime = getEntityPropertyByPropertyName(methodEntityMap[metaMethod.name+"nonceEntity"].properties,getCustomParameter(customParameters,methodEntityMap[metaMethod.name+"nonceEntity"].name+"_modifyDateTime","modifyDateTime")),
+	    		     modifyUser = getEntityPropertyByPropertyName(methodEntityMap[metaMethod.name+"nonceEntity"].properties,getCustomParameter(customParameters,methodEntityMap[metaMethod.name+"nonceEntity"].name+"_modifyUser","modifyUser"))>
+			<#if modifyDateTime !="" || modifyUser !="">
+			//设置修改人和修改时间
+			set${entityName}ModifyInfoFor${_methodName?cap_first}(old${entityName},context);
+			</#if>
+			//更新对象
+			sqlSessionTemplate.update("${methodEntityMap[metaMethod.name+"nonceEntity"].name}",old${entityName});
+		}catch (DawnException e) {
+			throw e;
+		}catch (Exception e) {
+			throw new DawnException("error","出现数据异常,原因"+e.getMessage());
+		}
+		return old${entityName};
+	}
+	<#if modifyDateTime !="" || modifyUser !="">
+	//设置修改人和修改时间
+	private void set${entityName}ModifyInfoFor${_methodName?cap_first}(${entityName} ${entityNameLower},Map<String,Object> context){
+		Map<String,String> userInfo = (Map<String,String>)context.get("userInfo");
+		String modifyUser = userInfo==null ? "":userInfo.get("userName");
+		<#if modifyDateTime !="">
+		${entityNameLower}.set${modifyDateTime.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+		</#if>
+		<#if modifyUser !="">
+		if(${entityNameLower}.get${modifyUser.name?cap_first}()==null || ${entityNameLower}.get${modifyUser.name?cap_first}().equals("")){
+			${entityNameLower}.set${modifyUser.name?cap_first}(modifyUser);
+		}
+		</#if>
+		<#list methodEntityMap[metaMethod.name+"aboutEntityList"] as aboutEntity>
+		<#assign aboutEntityName = getEntityClazzName(aboutEntity),
+		         aboutEntityNameLower = aboutEntityName?uncap_first,
+				 modifyDateTimeTemp = getEntityPropertyByPropertyName(aboutEntity.properties,getCustomParameter(customParameters,aboutEntity.name+"_modifyDateTime","modifyDateTime")),
+	    		 modifyUserTemp = getEntityPropertyByPropertyName(aboutEntity.properties,getCustomParameter(customParameters,aboutEntity.name+"_modifyUser","modifyUser"))>
+		<#if modifyDateTimeTemp !="" || modifyUserTemp !="">
+		//设置${aboutEntityName}
+		${aboutEntityName} ${aboutEntityNameLower} = ${entityNameLower}.get${aboutEntityName}();
+		if(${aboutEntityNameLower}!=null){
+			<#if modifyDateTimeTemp !="">
+			${aboutEntityNameLower}.set${modifyDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+			</#if>
+			<#if modifyUserTemp !="">
+			if(${aboutEntityNameLower}.get${modifyUserTemp.name?cap_first}()==null || ${aboutEntityNameLower}.get${modifyUserTemp.name?cap_first}().equals("")){
+				${aboutEntityNameLower}.set${modifyUserTemp.name?cap_first}(modifyUser);
+			}
+			</#if>
+		}
+		</#if>
+		</#list>
+		<#list methodEntityMap[metaMethod.name+"subEntityList"] as subEntity>
+		<#assign subEntityName = getEntityClazzName(subEntity),
+		         subEntityNameLower = subEntityName?uncap_first,
+				 modifyDateTimeTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_modifyDateTime","modifyDateTime")),
+	    		 modifyUserTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_modifyUser","modifyUser"))>
+		<#if modifyDateTimeTemp !="" || modifyUserTemp !="">
+		//设置${subEntityName}实体
+		List<${subEntityName}> ${subEntityNameLower}List = ${entityNameLower}.get${subEntityName}List();
+		if(${subEntityNameLower}List!=null){
+			for(${subEntityName} ${subEntityNameLower}:${subEntityNameLower}List){
+				<#if modifyDateTimeTemp !="">
+				${subEntityNameLower}.set${modifyDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+				</#if>
+				<#if modifyUserTemp !="">
+				if(${subEntityNameLower}.get${modifyUserTemp.name?cap_first}()==null || ${subEntityNameLower}.get${modifyUserTemp.name?cap_first}().equals("")){
+					${subEntityNameLower}.set${modifyUserTemp.name?cap_first}(modifyUser);
+				}
+				</#if>
+			}
+		}
+		</#if>
+		</#list>
+	}
+	</#if>
+
+	/**
+	 * 将输入参数实体对象属性复制给从数据库获取实体对象
+	 * <br>同时删除数据库中子实体仍然存在的对象
+	 */
+	private void copy${entityName}EdtPropertyToDBEntityFor${_methodName?cap_first}(
+							${entityName} old${entityName},${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException{
+	<#if metaMethod.handleEntities??>
+		<#--nonce entity -->
+		<#assign handleEntity = haveHandleEntityByEntityName(methodEntityMap[metaMethod.name+"nonceEntity"].name,metaMethod.handleEntities)>
+		<#if handleEntity !="">
+			<#if handleEntity.dataItems?? && handleEntity.dataItems?size &gt; 0>
+				<#list handleEntity.dataItem as tempName>
+				<#assign propertyName = tempName[0]?cap_first>
+			old${entityName}.set${propertyName}(${entityNameLower}.get${propertyName}());
+				</#list>
+			<#else>
+				<#list methodEntityMap[metaMethod.name+"nonceEntity"].properties as entityProperty>
+				<#assign propertyName = entityProperty.name?cap_first>
+				<#if exceptPropertyByNames(propertyName,[noncePkName,getCustomParameter(customParameters,methodEntityMap[metaMethod.name+"nonceEntity"].name+"_createDateTime","createDateTime"),getCustomParameter(customParameters, methodEntityMap[metaMethod.name+"nonceEntity"].name+"_createUser","createUser")])="false">
+			old${entityName}.set${propertyName}(${entityNameLower}.get${propertyName}());
+				</#if>
+				</#list>
+			</#if>
+		</#if>
+		<#--about entity -->
+		<#list methodEntityMap[metaMethod.name+"aboutEntityList"] as aboutEntity>
+		<#assign handleEntity = haveHandleEntityByEntityName(aboutEntity.name,metaMethod.handleEntities),
+		         aboutEntityName = getEntityClazzName(aboutEntity),
+		         aboutEntityNameLower = aboutEntityName?uncap_first,
+				 aboutEntityPKName = getEntityPKProperty(aboutEntity).name?cap_first>
+			<#if handleEntity !="">
+			<#if handleEntity.dataItems?? && handleEntity.dataItems?size &gt; 0>
+			${aboutEntityName} ${aboutEntityNameLower} = ${entityNameLower}.get${aboutEntityName}();
+			${aboutEntityName} old${aboutEntityName} = old${entityName}.get${aboutEntityName}();
+			if(${aboutEntityNameLower}!=null && old${aboutEntityName}!=null){
+				<#list handleEntity.dataItem as tempName>
+				<#assign propertyName = tempName[0]?cap_first>
+				old${aboutEntityName}.set${propertyName}(${aboutEntityNameLower}.get${propertyName}());
+				</#list>
+			}
+			<#else>
+			${aboutEntityName} ${aboutEntityNameLower} = ${entityNameLower}.get${aboutEntityName}();
+			${aboutEntityName} old${aboutEntityName} = old${entityName}.get${aboutEntityName}();
+			if(${aboutEntityNameLower}!=null && old${aboutEntityName}!=null){
+				<#list aboutEntity.properties as entityProperty>
+				<#assign propertyName = entityProperty.name?cap_first>
+				<#if exceptPropertyByNames(propertyName,[aboutEntityPKName,getCustomParameter(customParameters,aboutEntity.name+"_createDateTime","createDateTime"),getCustomParameter(customParameters, aboutEntity.name+"_createUser","createUser")])="false">
+				old${aboutEntityName}.set${propertyName}(${aboutEntityNameLower}.get${propertyName}());
+				</#if>
+				</#list>
+			}
+			</#if>
+		</#if>
+		</#list>
+		<#--sub entity -->
+		<#list methodEntityMap[metaMethod.name+"subEntityList"] as subEntity>
+		<#assign handleEntity = haveHandleEntityByEntityName(subEntity.name,metaMethod.handleEntities),
+		         subEntityName = getEntityClazzName(subEntity),
+		         subEntityNameLower = subEntityName?uncap_first,
+		         subPKProperty = getEntityPKProperty(subEntity),
+				 subEntityPKName = subPKProperty.name?cap_first>
+			//子实体${subEntityName}
+			<#if handleEntity !="">
+			<#if handleEntity.dataItems?? && handleEntity.dataItems?size &gt; 0>
+			List<${subEntityName}> ${subEntityNameLower}List = ${entityNameLower}.get${subEntityName}List();
+			if(${subEntityNameLower}List!=null){
+				List<${subEntityName}> old${subEntityName}List = old${entityName}.get${subEntityName}List();
+				List<${subEntityName}> remove${subEntityName}List = new ArrayList<${subEntityName}>();
+				for(${subEntityName} old${subEntityName}:old${subEntityName}List){
+					${subEntityName} ${subEntityNameLower} = null;
+					for(${subEntityName} one${subEntityName}:${subEntityNameLower}List){
+						if(one${subEntityName}.get${subEntityPKName}().equals(old${subEntityName}.get${subEntityPKName}())){
+							${subEntityNameLower} = one${subEntityName};
+							break;
+						}
+					}
+					if(${subEntityNameLower}!=null){
+						<#list handleEntity.dataItems as tempName>
+						<#assign propertyName = tempName[0]?cap_first>
+						old${subEntityName}.set${propertyName}(${subEntityNameLower}.get${propertyName}());
+						</#list>
+					}else{
+						remove${subEntityName}List.add(old${subEntityName});
+					}
+				}
+				old${subEntityName}List.removeAll(remove${subEntityName}List);
+				//删除数据库子表数据
+				for(${subEntityName} del${subEntityName}:remove${subEntityName}List){
+					sqlSessionTemplate.delete("${subEntity.name}",del${subEntityName}.get${subEntityPKName}());
+				}
+				
+				//新增对象
+				String createUser = null;
+				for(${subEntityName} one${subEntityName}:${subEntityNameLower}List){
+					${subEntityName} ${subEntityNameLower} = null;
+					for(${subEntityName} old${subEntityName}:old${subEntityName}List){
+						if(one${subEntityName}.get${subEntityPKName}().equals(old${subEntityName}.get${subEntityPKName}())){
+							${subEntityNameLower} = one${subEntityName};
+							break;
+						}
+					}
+					if(${subEntityNameLower}==null){
+						//设置主键
+						<#if subPKProperty.type="java.lang.String" >
+						if(one${subEntityName}.get${subEntityPKName}()==null || one${subEntityName}.get${subEntityPKName}().equals("")){
+							one${subEntityName}.set${subEntityPKName}(generator.generateString("${subEntity.name}"));
+						}
+						<#elseif subPKProperty.type="java.lang.Integer" && autoIncrementPK(subPKProperty)="false">
+						if(one${subEntityName}.get${subEntityPKName}()==null){
+							one${subEntityName}.set${subEntityPKName}(generator.generateInteger("${subEntity.name}"));
+						}
+						<#elseif  aboutPKProperty.type="java.lang.Long" && autoIncrementPK(aboutPKProperty)="false">
+						if(one${subEntityName}.get${subEntityPKName}()==null){
+							one${subEntityName}.set${subEntityPKName}(generator.generateLong("${subEntity.name}"));
+						}
+						</#if>
+						//创建人和创建用户
+						<#assign  createDateTimeTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createDateTime","createDateTime")),
+	    		 						createUserTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createUser","createUser"))>
+						<#if createDateTimeTemp !="" || createUserTemp !="">
+							<#if createDateTimeTemp !="">
+							one${subEntityName}.set${createDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+							</#if>
+							<#if createUserTemp !="">
+							if(one${subEntityName}.get${createUserTemp.name?cap_first}()==null || one${subEntityName}.get${createUserTemp.name?cap_first}().equals("")){
+								if(createUser==null){
+									Map<String,String> userInfo = (Map<String,String>)context.get("userInfo");
+									createUser = userInfo==null ? "":userInfo.get("userName");
+								}
+								one${subEntityName}.set${createUserTemp.name?cap_first}(createUser);
+							}
+							</#if>
+						</#if>
+						old${subEntityName}List.add(one${subEntityName});
+					}
+				}
+			}
+			<#else>
+			List<${subEntityName}> ${subEntityNameLower}List = ${entityNameLower}.get${subEntityName}List();
+			if(${subEntityNameLower}List!=null){
+				List<${subEntityName}> old${subEntityName}List = old${entityName}.get${subEntityName}List();
+				List<${subEntityName}> remove${subEntityName}List = new ArrayList<${subEntityName}>();
+				for(${subEntityName} old${subEntityName}:old${subEntityName}List){
+					${subEntityName} ${subEntityNameLower} = null;
+					for(${subEntityName} one${subEntityName}:${subEntityNameLower}List){
+						if(one${subEntityName}.get${subEntityPKName}().equals(old${subEntityName}.get${subEntityPKName}())){
+							${subEntityNameLower} = one${subEntityName};
+							break;
+						}
+					}
+					if(${subEntityNameLower}!=null){
+						<#list subEntity.properties as entityProperty>
+						<#assign propertyName = entityProperty.name?cap_first>
+						<#if exceptPropertyByNames(propertyName,[subEntityPKName,getCustomParameter(customParameters,subEntity.name+"_createDateTime","createDateTime"),getCustomParameter(customParameters, subEntity.name+"_createUser","createUser")])="false">
+						old${subEntityName}.set${propertyName}(${subEntityNameLower}.get${propertyName}());
+						</#if>
+						</#list>
+					}else{
+						remove${subEntityName}List.add(old${subEntityName});
+					}
+				}
+				old${subEntityName}List.removeAll(remove${subEntityName}List);
+				//删除数据库子表数据
+				for(${subEntityName} del${subEntityName}:remove${subEntityName}List){
+					sqlSessionTemplate.delete("${subEntity.name}",del${subEntityName}.get${subEntityPKName}());
+				}
+				//新增对象
+				String createUser = null;
+				for(${subEntityName} one${subEntityName}:${subEntityNameLower}List){
+					${subEntityName} ${subEntityNameLower} = null;
+					for(${subEntityName} old${subEntityName}:old${subEntityName}List){
+						if(one${subEntityName}.get${subEntityPKName}().equals(old${subEntityName}.get${subEntityPKName}())){
+							${subEntityNameLower} = one${subEntityName};
+							break;
+						}
+					}
+					if(${subEntityNameLower}==null){
+						//设置主键
+						<#if subPKProperty.type="java.lang.String" >
+						if(one${subEntityName}.get${subEntityPKName}()==null || one${subEntityName}.get${subEntityPKName}().equals("")){
+							one${subEntityName}.set${subEntityPKName}(generator.generateString("${subEntity.name}"));
+						}
+						<#elseif subPKProperty.type="java.lang.Integer" && autoIncrementPK(subPKProperty)="false">
+						if(one${subEntityName}.get${subEntityPKName}()==null){
+							one${subEntityName}.set${subEntityPKName}(generator.generateInteger("${subEntity.name}"));
+						}
+						<#elseif  aboutPKProperty.type="java.lang.Long" && autoIncrementPK(aboutPKProperty)="false">
+						if(one${subEntityName}.get${subEntityPKName}()==null){
+							one${subEntityName}.set${subEntityPKName}(generator.generateLong("${subEntity.name}"));
+						}
+						</#if>
+						//创建人和创建用户
+						<#assign  createDateTimeTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createDateTime","createDateTime")),
+	    		 						createUserTemp = getEntityPropertyByPropertyName(subEntity.properties,getCustomParameter(customParameters,subEntity.name+"_createUser","createUser"))>
+						<#if createDateTimeTemp !="" || createUserTemp !="">
+							<#if createDateTimeTemp !="">
+							one${subEntityName}.set${createDateTimeTemp.name?cap_first}(new Timestamp(System.currentTimeMillis()));			
+							</#if>
+							<#if createUserTemp !="">
+							if(one${subEntityName}.get${createUserTemp.name?cap_first}()==null || one${subEntityName}.get${createUserTemp.name?cap_first}().equals("")){
+								if(createUser==null){
+									Map<String,String> userInfo = (Map<String,String>)context.get("userInfo");
+									createUser = userInfo==null ? "":userInfo.get("userName");
+								}
+								one${subEntityName}.set${createUserTemp.name?cap_first}(createUser);
+							}
+							</#if>
+						</#if>
+						old${subEntityName}List.add(one${subEntityName});
+					}
+				}
+			}
+			</#if>
+			</#if>
+		</#list>
+	</#if>
+	}
+	<#elseif metaMethod.type = "delete" >
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public void ${_methodName}(Object id,Map<String,Object> context) throws DawnException{
+		if(id==null){
+			throw new DawnException ("${entityName}.${noncePkName?uncap_first}","实体对象唯一标识不存在");
+		}
+		sqlSessionTemplate.delete("${methodEntityMap[metaMethod.name+"nonceEntity"].name}",id);
+	}
+	<#elseif metaMethod.type = "get" && metaMethod.usingClazz>
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public ${entityName} ${_methodName}(Object id,Map<String,Object> context) throws DawnException{
+		//检查当前实体主键不能为空
+		if(id == null){
+			throw new DawnException ("${entityName}.${noncePkName?uncap_first}","实体对象唯一标识不存在");
+		}
+		//从数据库获取对象
+		<#assign entityNames=collectChildEntityNames(methodEntityMap[metaMethod.name+"aboutEntityList"],methodEntityMap[metaMethod.name+"subEntityList"])>
+			<#if entityNames="">
+		${entityName} ${entityNameLower} = sqlSessionTemplate.get(${entityName}.class,"${methodEntityMap[metaMethod.name+"nonceEntity"].name}",id,true);
+			<#else>
+		${entityName} ${entityNameLower} = sqlSessionTemplate.get(${entityName}.class,"${methodEntityMap[metaMethod.name+"nonceEntity"].name}",id,${entityNames});
+			</#if>
+		return ${entityNameLower};
+	}
+	<#elseif metaMethod.type = "custom">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException{
+		<#if entityName !="Object">
+		<@handleEntityValidator methodEntityMap[metaMethod.name+"nonceEntity"] methodEntityMap[metaMethod.name+"aboutEntityList"] methodEntityMap[metaMethod.name+"subEntityList"] metaMethod.validators "DawnException" 2 />
+		</#if>
+		return null;
+	}
+
+		</#if>
+</#list>
+</#if>
+	public void setSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
+		this.sqlSessionTemplate = sqlSessionTemplate;
+	}
+	public void setGenerator(IDGenerator generator) {
+		this.generator = generator;
+	}
+}

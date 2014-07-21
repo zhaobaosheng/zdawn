@@ -659,7 +659,7 @@ public class CommonExecutor implements Executor {
 
 	public Map<String, Object> getData(String entityName, String propertyName,
 			Object id, boolean excludeChildEntity, SysModel sysModel,
-			Connection con) throws PersistenceException {
+			Connection con,String... loadChilds) throws PersistenceException {
 		Entity mainEntity = sysModel.findEntityByName(entityName);
 		Property unique = mainEntity.findUniqueColumnProperty();
 		Property condition = unique;
@@ -671,20 +671,40 @@ public class CommonExecutor implements Executor {
 		if(data==null) return null;
 		if(excludeChildEntity) return data;
 		List<Relation> relationList = mainEntity.getRelations();
-		for (Relation relation : relationList) {
-			Entity entity = sysModel.findEntityByName(relation.getEntityName());
-			Object fk = id;
-			if (!relation.getSelfColumn().equals(unique.getColumn())){
-				fk = data.get(relation.getSelfPropertyName());
+		if(loadChilds==null){//load all
+			for (Relation relation : relationList) {
+				Entity entity = sysModel.findEntityByName(relation.getEntityName());
+				Object fk = id;
+				if (!relation.getSelfColumn().equals(unique.getColumn())){
+					fk = data.get(relation.getSelfPropertyName());
+				}
+				if(relation.getType().equals("oneToOne")){
+					Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
+					data.put(Utils.firstLowerCase(entity.getName()), mapData);
+				}else if(relation.getType().equals("oneToMany")){
+					List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
+					data.put(Utils.firstLowerCase(entity.getName())+"List", mapDataList);
+				}else{
+					log.warn(relation.getDescription()+" not support relation type "+relation.getType());
+				}
 			}
-			if(relation.getType().equals("oneToOne")){
-				Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
-				data.put(Utils.firstLowerCase(entity.getName()), mapData);
-			}else if(relation.getType().equals("oneToMany")){
-				List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
-				data.put(Utils.firstLowerCase(entity.getName())+"List", mapDataList);
-			}else{
-				log.warn(relation.getDescription()+" not support relation type "+relation.getType());
+		}else{
+			for (Relation relation : relationList) {
+				if(!Utils.contains(loadChilds, relation.getEntityName())) continue;
+				Entity entity = sysModel.findEntityByName(relation.getEntityName());
+				Object fk = id;
+				if (!relation.getSelfColumn().equals(unique.getColumn())){
+					fk = data.get(relation.getSelfPropertyName());
+				}
+				if(relation.getType().equals("oneToOne")){
+					Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
+					data.put(Utils.firstLowerCase(entity.getName()), mapData);
+				}else if(relation.getType().equals("oneToMany")){
+					List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
+					data.put(Utils.firstLowerCase(entity.getName())+"List", mapDataList);
+				}else{
+					log.warn(relation.getDescription()+" not support relation type "+relation.getType());
+				}
 			}
 		}
 		return data;
@@ -692,7 +712,7 @@ public class CommonExecutor implements Executor {
 	
 	public <T> T get(Class<T> clazz, String entityName, String propertyName,
 			Object id, boolean excludeChildEntity, SysModel sysModel,
-			Connection con) throws PersistenceException {
+			Connection con,String... loadChilds) throws PersistenceException {
 		Entity mainEntity = sysModel.findEntityByName(entityName);
 		Property unique = mainEntity.findUniqueColumnProperty();
 		Property condition = unique;
@@ -704,30 +724,60 @@ public class CommonExecutor implements Executor {
 		if(data==null) return null;
 		if(excludeChildEntity) return BeanUtil.bindBean(clazz,data);
 		List<Relation> relationList = mainEntity.getRelations();
-		for (Relation relation : relationList) {
-			Entity entity = sysModel.findEntityByName(relation.getEntityName());
-			Object fk = id;
-			if (!relation.getSelfColumn().equals(unique.getColumn())){
-				fk = data.get(relation.getSelfPropertyName());
-			}
-			if(relation.getType().equals("oneToOne")){
-				Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
-				if(mapData.size()>0){
-					if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
-					data.put(Utils.firstLowerCase(entity.getName()),BeanUtil.bindBean(entity.getClazz(),mapData));
+		if(loadChilds==null){//load all
+			for (Relation relation : relationList) {
+				Entity entity = sysModel.findEntityByName(relation.getEntityName());
+				Object fk = id;
+				if (!relation.getSelfColumn().equals(unique.getColumn())){
+					fk = data.get(relation.getSelfPropertyName());
 				}
-			}else if(relation.getType().equals("oneToMany")){
-				List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
-				if(mapDataList.size()>0){
-					if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
-					List<Object> childList = new ArrayList<Object>();
-					for (Map<String, Object> one : mapDataList) {
-						childList.add(BeanUtil.bindBean(entity.getClazz(),one));
+				if(relation.getType().equals("oneToOne")){
+					Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
+					if(mapData.size()>0){
+						if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
+						data.put(Utils.firstLowerCase(entity.getName()),BeanUtil.bindBean(entity.getClazz(),mapData));
 					}
-					data.put(Utils.firstLowerCase(entity.getName())+"List",childList);
+				}else if(relation.getType().equals("oneToMany")){
+					List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
+					if(mapDataList.size()>0){
+						if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
+						List<Object> childList = new ArrayList<Object>();
+						for (Map<String, Object> one : mapDataList) {
+							childList.add(BeanUtil.bindBean(entity.getClazz(),one));
+						}
+						data.put(Utils.firstLowerCase(entity.getName())+"List",childList);
+					}
+				}else{
+					log.warn(relation.getDescription()+" not support relation type "+relation.getType());
 				}
-			}else{
-				log.warn(relation.getDescription()+" not support relation type "+relation.getType());
+			}
+		}else{
+			for (Relation relation : relationList) {
+				if(!Utils.contains(loadChilds, relation.getEntityName())) continue;
+				Entity entity = sysModel.findEntityByName(relation.getEntityName());
+				Object fk = id;
+				if (!relation.getSelfColumn().equals(unique.getColumn())){
+					fk = data.get(relation.getSelfPropertyName());
+				}
+				if(relation.getType().equals("oneToOne")){
+					Map<String, Object> mapData = getRelatedEntity(relation,entity,fk,con);
+					if(mapData.size()>0){
+						if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
+						data.put(Utils.firstLowerCase(entity.getName()),BeanUtil.bindBean(entity.getClazz(),mapData));
+					}
+				}else if(relation.getType().equals("oneToMany")){
+					List<Map<String, Object>> mapDataList = getChildEntity(relation,entity,fk,con);
+					if(mapDataList.size()>0){
+						if(entity.getClazz().equals("")) throw new PersistenceException("","entity class not define");
+						List<Object> childList = new ArrayList<Object>();
+						for (Map<String, Object> one : mapDataList) {
+							childList.add(BeanUtil.bindBean(entity.getClazz(),one));
+						}
+						data.put(Utils.firstLowerCase(entity.getName())+"List",childList);
+					}
+				}else{
+					log.warn(relation.getDescription()+" not support relation type "+relation.getType());
+				}
 			}
 		}
 		return BeanUtil.bindBean(clazz,data);

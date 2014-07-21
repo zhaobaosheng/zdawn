@@ -1,0 +1,77 @@
+<#include "../lib/getJavaImportEntity.ftl">
+<#include "../lib/getEntityPKProperty.ftl">
+<#include "../lib/getEntityClazzName.ftl">
+<#include "../lib/getRefPropertyNameByEntityName.ftl">
+<#include "../lib/getEntityPropertyByPropertyName.ftl">
+<#include "../domain/haveHandleEntityByEntityName.ftl">
+<#include "allCommonService.ftl">
+<#include "collectParseJsonChildEntityNames.ftl">
+<#include "haveFormatProperty.ftl">
+package ${package};
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.zdawn.DawnException;
+import com.zdawn.util.Utils;
+import com.zdawn.util.beans.BeanUtil;
+import com.zdawn.util.convert.ConvertUtil;
+import com.zdawn.util.json.jackson.JsonUtil;
+import com.zdawn.util.vo.VOUtil;
+import com.zdawn.util.web.HttpRequestUtil;
+import ${packagefordomain}.${metaClazz.name};
+<@getJavaImportEntity packagePath methodEntityMap["nonceClazzEntityList"] methodEntityMap["otherClazzEntityList"] />
+
+<#assign clazzInterfaceName = metaClazz.name?cap_first>
+@Controller
+@RequestMapping("/${clazzInterfaceName}Service")
+public class ${clazzInterfaceName}Service{
+	private  Logger log = LoggerFactory.getLogger(${clazzInterfaceName}Service.class);
+	
+	@Resource(name="${clazzInterfaceName?uncap_first}")
+	private ${clazzInterfaceName} ${clazzInterfaceName?uncap_first};
+	
+<#if metaClazz.methods?exists>
+<#list metaClazz.methods as metaMethod>
+	    <#if methodEntityMap[metaMethod.name+"nonceEntity"]??>
+			<#assign _methodName = metaMethod.name?uncap_first,
+			         entityName = getEntityClazzName(methodEntityMap[metaMethod.name+"nonceEntity"]),
+			         entityNameLower = entityName?uncap_first,
+			         entityCname = methodEntityMap[metaMethod.name+"nonceEntity"].description,
+			         pkProperty = getEntityPKProperty(methodEntityMap[metaMethod.name+"nonceEntity"]),
+		         	 noncePkName = pkProperty.name?cap_first>
+		<#else>
+			<#assign _methodName = metaMethod.name?uncap_first,
+			         entityName = "Object",
+			         entityCname = "",
+				 	 entityNameLower = entityName?uncap_first>
+		</#if>
+	<#if metaMethod.type = "create" && metaMethod.genServiceClazz && metaMethod.usingClazz>
+	<@add_updateCommonService metaMethod/>
+	<#elseif metaMethod.type = "update" && metaMethod.genServiceClazz && metaMethod.usingClazz>
+	<@add_updateCommonService metaMethod/>
+	<#elseif metaMethod.type = "get" && metaMethod.genServiceClazz && metaMethod.usingClazz>
+	<@get_delCommonService metaMethod/>
+	<#elseif metaMethod.type = "delete" && metaMethod.genServiceClazz>
+	<@get_delCommonService metaMethod/>
+	<#elseif metaMethod.type = "custom" && metaMethod.genServiceClazz && metaMethod.usingClazz>
+	<@customCommonService metaMethod/>
+	</#if>
+</#list>
+<@prepareCurrentUserMethod/>
+</#if>
+	
+}

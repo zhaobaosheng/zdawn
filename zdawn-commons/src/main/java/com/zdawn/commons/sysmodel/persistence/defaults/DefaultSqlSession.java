@@ -105,6 +105,11 @@ public class DefaultSqlSession implements SqlSession {
 		return executor.getData(entityName, propertyName, uniqueValue, excludeChildEntity, sysModel, connection);
 	}
 	@Override
+	public Map<String, Object> getData(String entityName, Object id,
+			String... loadChildEntity) throws PersistenceException {
+		return executor.getData(entityName,null, id,false, sysModel, connection,loadChildEntity);
+	}
+	@Override
 	public <T> T get(Class<T> clazz,String entityName, Object id) throws PersistenceException {
 		return executor.get(clazz, entityName,null, id,false, sysModel, connection);
 	}
@@ -125,7 +130,11 @@ public class DefaultSqlSession implements SqlSession {
 			throws PersistenceException {
 		return executor.get(clazz, entityName, propertyName, uniqueValue, excludeChildEntity, sysModel, connection);
 	}
-	
+	@Override
+	public <T> T get(Class<T> clazz, String entityName, Object id,
+			String... loadChildEntity) throws PersistenceException {
+		return executor.get(clazz, entityName,null, id,false, sysModel, connection,loadChildEntity);
+	}
 	@Override
 	public void batchSaveData(String entityName, List<Map<String, Object>> data)
 			throws PersistenceException {

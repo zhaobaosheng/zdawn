@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.zdawn.commons.sysmodel.metaservice.impl.SysModelImpl;
+import com.zdawn.util.ResourceUtil;
 
 public class ModelFactory {
 	private static SysModel sysModel = null;
@@ -25,7 +24,7 @@ public class ModelFactory {
 	}
 	public static synchronized void loadQueryConfigFromFileSystem(String filePath,String regxFileName){
 		SysModelXMLLoader loader = new SysModelXMLLoader();
-		ArrayList<File> listFiles =  findAllFiles(filePath, regxFileName);
+		ArrayList<File> listFiles =  ResourceUtil.findAllFiles(filePath, regxFileName);
 		if(sysModel==null) sysModel = new SysModelImpl();
 		for (File file : listFiles) {
 			SysModel tmp = loader.loadFromXML(file);
@@ -59,41 +58,7 @@ public class ModelFactory {
 	public static SysModel getSysModel() {
 		return sysModel;
 	}
-	/**
-	 * 在给定路径中查找匹配正则表达式文件
-	 * @param path 文件路径
-	 * @param regxFileName 正则表达式
-	 * @return ArrayList&lt;File&gt;
-	 */
-	public static ArrayList<File> findAllFiles(String path,String regxFileName){
-		ArrayList<File> listFiles = new ArrayList<File>();
-		Pattern pattern = Pattern.compile(regxFileName);
-		ArrayList<File> subFoder = new ArrayList<File>();
-		subFoder.add(new File(path));
-		while(true){
-			ArrayList<File> temp = new ArrayList<File>();
-			for (File file : subFoder) {
-				if(file.isDirectory()){//如果是文件夹,遍历子文件
-					File[] subFile = file.listFiles();
-					for (int i = 0; i < subFile.length; i++) {
-						if(subFile[i].isDirectory()) temp.add(subFile[i]);
-						else{
-							Matcher matcher = pattern.matcher(subFile[i].getName());
-							if(matcher.matches()) listFiles.add(subFile[i]);
-						}
-					}
-				}else{
-					Matcher matcher = pattern.matcher(file.getName());
-					if(matcher.matches()) listFiles.add(file);
-				}
-			}
-			//如果没有子目录退回循环，有赋值subFoder变量
-			if(temp.size()==0) break;
-			subFoder = null;
-			subFoder = temp;
-		}
-		return listFiles;
-	}
+	
 	public static void main(String[] arg){
 		loadQueryConfigFromClassPathByRegexFileName("DataModel\\w*\\.xml");
 	}

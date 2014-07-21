@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--此模型为生成代码使用 -->
+<CodeModel>
+	<!-- 生成代码配置信息 -->
+	<config>
+		<version>1.0</version>
+		<!--生成代码路径-->
+		<generatePath/>
+		<!--生成代码包路径前缀-->
+		<packagePrefix>com.zdawn</packagePrefix>
+	</config>
+	<!--
+		实体来源 sysmodel
+		importEntity元素可以多个
+	-->
+	<importEntity  resource="模型文件路径 文件名可以为正则表达式  example=classpath:XXX/XX/DataModel.xml" />
+	<MetaClazzes>
+		<MetaClazz pkg="包名 生成代码包名" nameCn="类描述" name="英文名 用于生成类名">
+			<Method name="方法" nameCn="方法中文描述" type="方法类型 内置create|get|update|delete|custom" genServiceClazz="是否生成接入服务类 true or false" usingClazz="是否使用对象传递参数">
+				<HandleEntity main="是否主实体" name="实体名称 name和tableName二选一" tableName="表名 name和tableName二选一">
+					<DataItem propertyName="属性名 propertyName和column二选一" column="字段名 propertyName和column二选一"/>
+				</HandleEntity>
+				<validateRules>
+					<!-- 
+						entityName和 tableName 任选其一
+                         propertyName和column 任选其一
+					-->
+					<rule type="rule" entityName="实体名称英文" tableName="表名" propertyName="" column="" require="必填验证true 验证数据不能为空
+false 验证数据可为空,如果为空不做进一步验证" errorMessage="错误消息"/>
+					<lengthRule type="lengthRule" entityName="实体名称英文" tableName="表名" propertyName="" column="" require="true" maxLength="4" minLength="2"/>
+					<regxRule type="regxRule" entityName="实体名称英文" tableName="表名" propertyName="" column="" require="true" errorMessage="" expression="正则表达式"/>
+					<exceptRule type="exceptRule" entityName="实体名称英文" tableName="表名" propertyName="" column="" require="true" errorMessage="" codeDicName="编码数据字典名称">内容用逗号分隔	</exceptRule>
+				</validateRules>
+			</Method>
+		</MetaClazz>
+	</MetaClazzes>
+</CodeModel>

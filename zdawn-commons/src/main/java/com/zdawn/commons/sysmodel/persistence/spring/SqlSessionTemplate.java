@@ -116,6 +116,18 @@ public class SqlSessionTemplate implements SqlSession {
 	}
 
 	@Override
+	public Map<String, Object> getData(String entityName, Object id,
+			String... loadChildEntity) throws PersistenceException {
+		return sqlSessionProxy.getData(entityName, id, loadChildEntity);
+	}
+
+	@Override
+	public <T> T get(Class<T> clazz, String entityName, Object id,
+			String... loadChildEntity) throws PersistenceException {
+		return sqlSessionProxy.get(clazz, entityName, id, loadChildEntity);
+	}
+
+	@Override
 	public int executeSql(String sql, Object... para)
 			throws PersistenceException {
 		return sqlSessionProxy.executeSql(sql, para);

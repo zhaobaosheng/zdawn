@@ -1,0 +1,73 @@
+<#include "../lib/getJavaImportEntity.ftl">
+<#include "../lib/getEntityClazzName.ftl">
+package ${package};
+
+import java.util.Map;
+<@getJavaImportListEntity packagePath methodEntityMap["nonceClazzEntityList"]/>
+import com.zdawn.DawnException;
+
+<#assign clazzInterfaceName = metaClazz.name?cap_first>
+/**
+ * ${metaClazz.nameCn}
+ */ 
+public interface ${clazzInterfaceName}{
+<#if metaClazz.methods?exists>
+<#list metaClazz.methods as metaMethod>
+    <#if methodEntityMap[metaMethod.name+"nonceEntity"]??>
+		<#assign _methodName = metaMethod.name?uncap_first,
+		         entityName = getEntityClazzName(methodEntityMap[metaMethod.name+"nonceEntity"]),
+		         entityCname = methodEntityMap[metaMethod.name+"nonceEntity"].description,
+			 	 entityNameLower = entityName?uncap_first>
+	<#else>
+		<#assign _methodName = metaMethod.name?uncap_first,
+		         entityName = "Object",
+		         entityCname = "",
+			 	 entityNameLower = entityName?uncap_first>
+	</#if>
+	
+	<#if metaMethod.type = "create">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+			<#if metaMethod.usingClazz>
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException;
+			<#else>
+	public Map<String,Object> ${_methodName}(Map<String,Object> ${entityNameLower},Map<String,Object> context) throws DawnException;
+			</#if>
+	<#elseif metaMethod.type = "update">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	 		<#if metaMethod.usingClazz>
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException;
+			<#else>
+	public Map<String,Object> ${_methodName}(Map<String,Object> ${entityNameLower},Map<String,Object> context) throws DawnException;
+			</#if>
+	<#elseif metaMethod.type = "delete">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+	public void ${_methodName}(Object id,Map<String,Object> context) throws DawnException;
+	<#elseif metaMethod.type = "get">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+			<#if metaMethod.usingClazz>
+	public ${entityName} ${_methodName}(Object id,Map<String,Object> context) throws DawnException;
+			<#else>
+	public Map<String,Object> ${_methodName}(Object id,Map<String,Object> context) throws DawnException;			
+			</#if>
+	<#elseif metaMethod.type = "custom">
+	/**
+	 * ${metaMethod.nameCn}
+	 */
+			<#if metaMethod.usingClazz>
+	public ${entityName} ${_methodName}(${entityName} ${entityNameLower},Map<String,Object> context) throws DawnException;
+			<#else>
+	public Map<String,Object> ${_methodName}(Map<String,Object> ${entityNameLower},Map<String,Object> context) throws DawnException;
+			</#if>
+	</#if>
+</#list>
+</#if>
+
+}

@@ -53,6 +53,15 @@ public interface SqlSession {
 	 */
 	public Map<String,Object> getData(String entityName,Object id,boolean excludeChildEntity) throws PersistenceException;
 	/**
+	 * 获取实体对象
+	 * @param entityName 实体名称
+	 * @param id 主键
+	 * @param loadChildEntity 指定load子实体(子实体 entityName)
+	 * @return 实体对象
+	 * @throws PersistenceException
+	 */
+	public Map<String,Object> getData(String entityName,Object id,String... loadChildEntity) throws PersistenceException;
+	/**
 	 * 获取实体对象，包括子实体对象。
 	 * <br>对象不存在返回 null
 	 * @param clazz 实体类-Entity元素clazz属性对应类
@@ -73,6 +82,10 @@ public interface SqlSession {
 	 * @throws PersistenceException
 	 */
 	public <T> T get(Class<T> clazz,String entityName,Object id,boolean excludeChildEntity) throws PersistenceException;
+	/**
+	 *  指定load子实体(子实体 entityName)
+	 */
+	public <T> T get(Class<T> clazz,String entityName,Object id,String... loadChildEntity) throws PersistenceException;
 	/**
 	 * 获取实体对象,包括引用子实体对象。
 	 * <br>对象不存在返回 null

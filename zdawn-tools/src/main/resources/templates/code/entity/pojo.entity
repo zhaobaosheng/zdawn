@@ -1,0 +1,97 @@
+<#include "../lib/parseNameFromFullClazzName.ftl">
+package ${package};
+
+<#list entity.properties as property>
+<#assign  propertyType = clazzPropertyMapping[property.type]>
+<#if !propertyType?starts_with("java.lang")>
+import ${propertyType};
+</#if>
+</#list>
+<#if (subEntityList?size>0)>
+import java.util.List;
+import java.util.ArrayList;
+</#if>
+
+<#list aboutEntityList as aboutEntity>
+	<#if !aboutEntity.clazz?starts_with(package)>
+import ${aboutEntity.clazz};
+	</#if>
+</#list>
+<#list subEntityList as subEntity>
+	<#if !subEntity.clazz?starts_with(package)>
+import ${subEntity.clazz};
+	</#if>
+</#list>
+<#assign  nonceEntityName = entity.name>
+<#if entity.clazz!="">
+<#assign  nonceEntityName = parseNameFromFullClazzName(entity.clazz)>
+</#if>
+public class ${nonceEntityName} implements java.io.Serializable  {
+		<#list entity.properties as property>
+		/**
+	 	 * ${property.description}
+	 	 */
+	 	 <#assign  propertyType = clazzPropertyMapping[property.type]>
+	 	private ${parseNameFromFullClazzName(propertyType)} ${property.name?uncap_first};
+		</#list>
+		 <#--relation property -->
+		<#list aboutEntityList as aboutEntity>
+			<#assign  aboutEntityName = aboutEntity.name>
+			<#if aboutEntity.clazz!="">
+			<#assign  aboutEntityName = parseNameFromFullClazzName(aboutEntity.clazz)>
+			</#if>
+		private ${aboutEntityName} ${aboutEntityName?uncap_first};
+		</#list>
+		<#list subEntityList as subEntity>
+			<#assign  subEntityName = subEntity.name>
+			<#if subEntity.clazz!="">
+			<#assign  subEntityName = parseNameFromFullClazzName(subEntity.clazz)>
+			</#if>
+		private List<${subEntityName}> ${subEntityName?uncap_first}List;
+		</#list>
+		
+		<#-- property getter setter 方法 -->
+		<#list entity.properties as property>
+		 <#assign  propertyType = clazzPropertyMapping[property.type]>
+		public ${parseNameFromFullClazzName(propertyType)} get${property.name?cap_first}(){
+			return this.${property.name?uncap_first};
+		}
+		public void set${property.name?cap_first}(${parseNameFromFullClazzName(propertyType)} ${property.name?uncap_first}) {
+		<#--如果填了默认值---->
+		<#if property.default?? && propertyType="java.lang.String">
+			if(${property.name?uncap_first} ==null || "".equals(${property.name?uncap_first})){
+				this.${property.name?uncap_first} = "${property.default}";
+			}else{
+				this.${property.name?uncap_first} = ${property.name?uncap_first};
+			}
+		<#else>
+			this.${property.name?uncap_first} = ${property.name?uncap_first};
+		</#if>	
+		}
+		</#list>
+		<#--relation property getter setter 方法 -->
+		<#list aboutEntityList as aboutEntity>
+			<#assign  aboutEntityName = aboutEntity.name>
+			<#if aboutEntity.clazz!="">
+			<#assign  aboutEntityName = parseNameFromFullClazzName(aboutEntity.clazz)>
+			</#if>
+		public ${aboutEntityName} get${aboutEntityName}(){
+			return this.${aboutEntityName?uncap_first};
+		}
+		public void set${aboutEntityName}(${aboutEntityName} ${aboutEntityName?uncap_first}){
+			this.${aboutEntityName?uncap_first} = ${aboutEntityName?uncap_first};
+		}
+		</#list>
+		<#list subEntityList as subEntity>
+			<#assign  subEntityName = subEntity.name>
+			<#if subEntity.clazz!="">
+			<#assign  subEntityName = parseNameFromFullClazzName(subEntity.clazz)>
+			</#if>
+		public List<${subEntityName}> get${subEntityName}List(){
+			return this.${subEntityName?uncap_first}List;
+		}
+		public void set${subEntityName}List(List<${subEntityName}> ${subEntityName?uncap_first}List){
+			this.${subEntityName?uncap_first}List = ${subEntityName?uncap_first}List;
+		}
+		</#list>
+}

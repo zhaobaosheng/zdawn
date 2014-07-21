@@ -1,10 +1,13 @@
 package com.zdawn.util;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -98,5 +101,28 @@ public class Utils {
 		}
 		if(clearOrigin) originPara.clear();
 		return para;
+	}
+	/**
+	 * 判断给定字符串是否在数组中，区分大小写。
+	 * @param array 字符串数组
+	 * @param value 字符串
+	 * @return true 包含 false不包含
+	 */
+	public static boolean contains(String[] array,String value){
+		if(array==null) return false;
+		for (int i = 0; i < array.length; i++) {
+			if(value.equals(array[i])) return true;
+		}
+		return false;
+	}
+	public static String transformDate(String dateFormat,Date date){
+		if(date==null) return "";
+		SimpleDateFormat df = new SimpleDateFormat(dateFormat);
+		return df.format(date);
+	}
+	public static String transformDate(String dateFormat,Date date,Locale locale){
+		if(date==null) return "";
+		SimpleDateFormat df = new SimpleDateFormat(dateFormat,locale);
+		return df.format(date);
 	}
 }

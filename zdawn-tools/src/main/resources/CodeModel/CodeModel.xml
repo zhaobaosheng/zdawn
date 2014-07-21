@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--此模型为生成代码使用 -->
+<CodeModel>
+	<!-- 生成代码配置信息 -->
+	<config>
+		<version>1.0</version>
+		<!--生成代码路径-->
+		<generatePath>C:/Users/zhaobs/Desktop/temp</generatePath>	
+		<!--生成代码包路径前缀-->
+		<packagePrefix>com.zdawn</packagePrefix>
+	</config>
+	<!--实体集合-->
+	<importEntity resource="classpath:DataModel.xml"/>
+	<MetaClazzes>
+		<MetaClazz pkg="demo.sec" nameCn="用户管理维护" name="UserMgr">
+		 	<Method name="addUser" nameCn="添加用户" type="create" genServiceClazz="true" usingClazz="true">
+				<HandleEntity main="true" tableName="EAP_USER">
+				</HandleEntity>
+				<HandleEntity  tableName="EAP_USER_GROUP_REL">
+				</HandleEntity>
+				<validateRules>
+					<rule type="rule" entityName="" tableName="EAP_USER" propertyName="" column="LOGON_NAME" require="true" errorMessage="该项为必填项"/>
+					<rule type="rule" entityName="" tableName="EAP_USER" propertyName="" column="IS_LOCK" require="true" errorMessage="该项为必填项"/>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="USER_ID" require="true" errorMessage="该项为必填项"/>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="GROUP_ID" require="true" errorMessage="该项为必填项"/>
+				</validateRules>
+			</Method>
+			<Method name="qryUser" nameCn="查询用户" type="get" genServiceClazz="true" usingClazz="true">
+			    <HandleEntity main="true" tableName="EAP_USER">
+				</HandleEntity>
+				<HandleEntity  tableName="EAP_USER_GROUP_REL">
+				</HandleEntity>
+				<HandleEntity  tableName="EAP_ORG_ADMIN_REL">
+				</HandleEntity>
+				<validators/>
+			</Method>
+			<Method name="updateUser" nameCn="更新用户信息" type="update" genServiceClazz="true" usingClazz="true">
+			    <HandleEntity main="true" tableName="EAP_USER">
+				</HandleEntity>
+				<HandleEntity  tableName="EAP_USER_GROUP_REL">
+				</HandleEntity>
+				<HandleEntity  tableName="EAP_ORG_ADMIN_REL">
+				</HandleEntity>
+				<validateRules>
+					<rule type="rule" entityName="" tableName="EAP_USER" propertyName="" column="LOGON_NAME" require="true" errorMessage="该项为必填项"/>
+					<rule type="regxRule" entityName="" tableName="EAP_USER" propertyName="" column="LOGON_NAME"  expression="zhao*" require="true" errorMessage="该项为必填项"/>
+					<rule type="exceptRule" entityName="" tableName="EAP_USER" propertyName="" column="IS_LOCK" require="true"  errorMessage="该项为必填项" codeDicName="BM$_YesNo"/>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="USER_ID" require="true" errorMessage="该项为必填项"/>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="GROUP_ID" require="true" errorMessage="该项为必填项"/>
+				</validateRules>
+			</Method>
+			<Method name="delUser" nameCn="删除用户信息" type="delete" genServiceClazz="true" >
+			    <HandleEntity main="true" tableName="EAP_USER">
+				</HandleEntity>
+			</Method>
+			<Method name="updateStatus" nameCn="更新用户状态" type="custom" genServiceClazz="true">
+				<HandleEntity main="true" tableName="EAP_USER">
+				</HandleEntity>
+				<validateRules>
+					<rule type="rule" entityName="" tableName="EAP_USER" propertyName="" column="FD_OBJECTID" require="true" errorMessage=""/>
+				</validateRules>
+			</Method>
+		</MetaClazz>
+		<MetaClazz pkg="demo.group" nameCn="小组管理" name="GroupMgr">
+			<Method name="addUserToGroup" nameCn="用户加入小组" type="create" genServiceClazz="false" usingClazz="true">
+				<HandleEntity main="true" tableName="EAP_USER_GROUP_REL">
+				</HandleEntity>
+				<validateRules>
+				    <rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="USER_ID" require="true" errorMessage="该项为必填项"/>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="GROUP_ID" require="true" errorMessage="该项为必填项"/>
+				</validateRules>
+			</Method>
+			<Method name="delUserFromGroup" nameCn="小组删除用户" type="delete" genServiceClazz="true">
+				<HandleEntity main="true" tableName="EAP_USER_GROUP_REL">
+				</HandleEntity>
+				<validateRules>
+					<rule type="rule" entityName="" tableName="EAP_USER_GROUP_REL" propertyName="" column="FD_OBJECTID" require="true" errorMessage=""/>
+				</validateRules>
+			</Method>	
+		</MetaClazz>
+	</MetaClazzes>
+</CodeModel>

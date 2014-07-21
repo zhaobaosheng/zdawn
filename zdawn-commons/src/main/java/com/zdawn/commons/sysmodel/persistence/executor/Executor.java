@@ -85,12 +85,13 @@ public interface Executor {
 	 * @param excludeChildEntity true为不包括子实体对象
 	 * @param sysModel 数据字典
 	 * @param con 数据连接
+	 * @param loadChilds 加载子实体列表
 	 * @return Map &lt;String, Object&gt;
 	 * @throws PersistenceException
 	 */
 	public Map<String, Object> getData(String entityName, String propertyName,
-			Object id, boolean excludeChildEntity, SysModel sysModel,
-			Connection con) throws PersistenceException;
+			Object id, boolean excludeChildEntity,SysModel sysModel,
+			Connection con,String... loadChilds) throws PersistenceException;
 	/**
 	 * 获取实体对象
 	 * @param clazz 实体Java类
@@ -100,12 +101,13 @@ public interface Executor {
 	 * @param excludeChildEntity true为不包括子实体对象
 	 * @param sysModel 数据字典
 	 * @param con 数据连接
+	 * @param loadChilds 加载子实体列表
 	 * @return T 实体对象
 	 * @throws PersistenceException
 	 */
 	public <T> T get(Class<T> clazz, String entityName, String propertyName,
 			Object id, boolean excludeChildEntity, SysModel sysModel,
-			Connection con) throws PersistenceException;
+			Connection con,String... loadChilds) throws PersistenceException;
 	
 	public void batchInsertData(String entityName,List<Map<String, Object>> data,
 			SysModel sysModel, Connection con) throws PersistenceException;
