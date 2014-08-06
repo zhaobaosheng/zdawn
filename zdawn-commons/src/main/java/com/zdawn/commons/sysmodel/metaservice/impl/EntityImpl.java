@@ -85,6 +85,10 @@ public class EntityImpl implements Entity,Serializable {
 		properties.add(property);
 	}
 	
+	public String toString() {
+		return description+"["+tableName+"]";
+	}
+	
 	public String getName() {
 		return name;
 	}
