@@ -1,0 +1,71 @@
+本cas客户端是在org.jasig.cas.client版本3.1.11基础上进行扩展
+实现cas1.0协议
+扩展功能如下:
+
+1 支持例外URL，配置的URL不做认证检查
+  配置参数 exceptURLs 不支持*.xxx通配符，多个可用“,”分隔
+  认证和验证过滤器都需要配置
+  
+2 ajax请求会话过期处理
+    ajax请求增加header: X-Requested-With=XMLHttpRequest
+    会话过期相应数据如下
+    header: sessionstatus=timeout
+    数据: {"result":"false","desc":"session time out"}
+    
+3 支持认证成功后调用自定义类初始会话
+   参数appAuthClassName 配置类名包括package
+   实现类必须有init方法
+    第一个参数 HttpServletRequest.class
+    第二个参数 String.class
+    example public void init(HttpServletRequest request,String userName)
+
+4 支持配置参数中ip使用实际请求的ip替换
+   参数replaceType和ipFrom配合使用
+   认证和验证过滤器都需要配置
+
+   替换类型replaceType
+    0 不替换使用配置地址
+    1 替换 service和serverName参数
+    2 替换 service、serverName、casServerLoginUrl参数
+    替换ip地址来源ipFrom
+    0 从HttpServletRequest.getServerName方法获取
+    配置其他内容从HttpServletRequest.getHeader方法获取
+    并且配置内容作为getHeader方法获取的参数
+    
+    web.xml example
+    
+    
+    <filter>  
+    	<filter-name>CAS AuthenticationFilter Filter</filter-name> 
+    	<filter-class>com.zdawn.casclient.ExtAuthenticationFilter</filter-class> 
+        <init-param> 
+            <param-name>casServerLoginUrl</param-name> 
+               <param-value>https://sso.tzwsh.gov.cn:8443/sso/login</param-value> 
+        </init-param>
+        <init-param>
+                <param-name>service</param-name> 
+                <param-value>http://172.20.31.9:8080/hosmger/LoginMgrService/loginUser.do</param-value> 
+        </init-param> 
+	</filter>
+	<filter-mapping> 
+	        <filter-name>CAS AuthenticationFilter Filter</filter-name> 
+	        <url-pattern>/*</url-pattern> 
+	</filter-mapping>
+
+    <filter>
+        <filter-name>CAS Validation Filter</filter-name> 
+        <filter-class>com.zdawn.casclient.ExtCas10TicketValidationFilter</filter-class> 
+        <init-param> 
+               <param-name>casServerUrlPrefix</param-name> 
+              <param-value>http://sso.tzwsh.gov.cn:81/sso</param-value> 
+        </init-param> 
+        <init-param> 
+                    <param-name>serverName</param-name> 
+                     <param-value>http://172.20.31.9:8080</param-value>
+        </init-param>
+    </filter> 
+    <filter-mapping> 
+            <filter-name>CAS Validation Filter</filter-name> 
+         <url-pattern>/*</url-pattern> 
+    </filter-mapping> 
+    
