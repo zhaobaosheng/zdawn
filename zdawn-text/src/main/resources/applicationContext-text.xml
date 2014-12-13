@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+	
+	<bean id="disposeUnit" class="com.zdawn.commons.concurrent.task.DisposeUnit" init-method="init">
+		<property name="corePoolSize"  value="5" />
+		<property name="maxPoolSize"  value="10" />
+		<property name="maxQueueSize"  value="100" />
+		<property name="waitExecutePeriod"  value="2" />
+	</bean>
+	<bean id="config" class="com.zdawn.text.lucene.config.Config">
+	    <property name="indexDBMap">
+	        	<map>
+	        		<entry key="knowledge">
+						<ref bean="knowledgeDB" />
+					</entry>
+				</map>
+	    </property>
+	</bean>
+	<bean id="knowledgeDB" class="com.zdawn.text.lucene.config.IndexDB">
+	    <property name="dbName" value="knowledge"/>
+	    <property name="indexDBPath" value="E:/temp"/>
+	    <property name="dbSize" value="500"/>
+	    <property name="docList">
+	        <list>
+				<ref bean="metaAttachmentDocument" />
+			</list>
+	    </property>
+	</bean>
+	<bean id="metaAttachmentDocument"  class="com.zdawn.text.lucene.config.MetaDocument">
+	    <property name="docName" value="attachmentDoc"/>
+	    <property name="uniqueFieldName" value=""/>
+	    <property name="fieldList">
+	        <list>
+				<ref bean="metaFileId" />
+				<ref bean="metaFileName" />
+				<ref bean="metaFileType" />
+				<ref bean="metaFileModifyDate" />
+				<ref bean="metaFileSize" />
+				<ref bean="metaFileContent" />
+			</list>
+	    </property>
+	</bean>
+	<bean id="metaFileId"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileId" />
+	    <property name="description" value="唯一标识" />
+	    <property name="dataType" value="string" />
+	    <property name="indexed"  value="true"/>
+	    <property name="stored"  value="true"/>
+	</bean>
+	<bean id="metaFileName"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileName" />
+	    <property name="description" value="文件名" />
+	    <property name="dataType" value="string" />
+	    <property name="indexed"  value="true"/>
+	    <property name="tokenized"  value="true"/>
+	    <property name="stored"  value="true"/>
+	</bean>
+	<bean id="metaFileType"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileType" />
+	    <property name="description" value="文件分类" />
+	    <property name="dataType" value="string" />
+	    <property name="stored"  value="true"/>
+	</bean>
+	<bean id="metaFileModifyDate"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileModifyDate" />
+	    <property name="description" value="文件最后修改时间" />
+	    <property name="dataType" value="string" />
+	    <property name="indexed"  value="true"/>
+	    <property name="stored"  value="true"/>
+	</bean>
+	<bean id="metaFileSize"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileSize" />
+	    <property name="description" value="文件最后修改时间" />
+	    <property name="dataType" value="long" />
+	    <property name="stored"  value="true"/>
+	</bean>
+	<bean id="metaFileContent"  class="com.zdawn.text.lucene.config.MetaField">
+	    <property name="fieldName" value="fileContent" />
+	    <property name="description" value="文件内容" />
+	    <property name="dataType" value="file" />
+	    <property name="indexed"  value="true"/>
+	    <property name="tokenized"  value="true"/>
+	    <property name="stored"  value="true"/>
+	</bean>
+	
+	<bean id="indexWriterFactory" class="com.zdawn.text.lucene.factory.DefaultIndexWriterFactory">
+	    <property name="config" ref="config"/>
+	    <property name="createIndexCheckPoint" value="20"/>
+	</bean>
+	<bean id="indexer"  class="com.zdawn.text.lucene.index.IndexerImpl">
+	    <property name="config" ref="config"/>
+	    <property name="indexWriterFactory" ref="indexWriterFactory"/>
+	</bean>
+	
+	<bean id="indexSearcherFactory"  class="com.zdawn.text.lucene.factory.DefaultIndexSearcherFactory">
+	    <property name="config"  ref="config"/>
+	    <property name="checkIndexChangeSpanTime"  value="30"/>
+	</bean>
+	<bean id="seacher" class="com.zdawn.text.lucene.search.SeacherImple">
+	    <property name="config" ref="config"/>
+	    <property name="millisTimeout" value="6000"/>
+	    <property name="indexSearcherFactory" ref="indexSearcherFactory"/>
+	    <property name="disposeUnitList">
+	        <list>
+	            <ref bean="disposeUnit" />
+	        </list>
+	    </property>
+	</bean>
+</beans>
