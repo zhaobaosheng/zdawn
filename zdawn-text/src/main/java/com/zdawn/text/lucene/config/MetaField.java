@@ -66,6 +66,12 @@ public class MetaField {
 			fieldType.setIndexed(indexed);
 			fieldType.setTokenized(tokenized);
 			fieldType.setStored(stored);
+			if(indexed && stored){
+				fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+				fieldType.setStoreTermVectorPositions(true);
+				fieldType.setStoreTermVectorOffsets(true);
+				fieldType.setStoreTermVectors(true);
+			}
 		    fieldType.freeze();
 		}else{
 			createNumberFieldType();
