@@ -8,8 +8,10 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.Terms;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -18,6 +20,7 @@ import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleFragmenter;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.TokenSources;
 
 import com.zdawn.text.lucene.config.Config;
 import com.zdawn.text.lucene.config.IndexDB;
@@ -83,14 +86,14 @@ public class SearchContextImpl implements SearchContext {
 		List<Map<String, Object>> dataSet = new ArrayList<Map<String,Object>>();
 		List<DocumentHolder> list = mergeTopDocs();
 		for (DocumentHolder documentHolder : list) {
-			IndexSearcher indexSearcher = indexSearcherList.get(documentHolder.getIndex());
-			Document document = indexSearcher.doc(documentHolder.getDoc());
-			dataSet.add(getDocumentData(document,config,dbName,query));
+			dataSet.add(getDocumentData(documentHolder,config,dbName,query));
 		}
 		return dataSet;
 	}
-	private Map<String, Object> getDocumentData(Document document,
+	private Map<String, Object> getDocumentData(DocumentHolder documentHolder,
 			Config config,String dbName,Query query) throws Exception{
+		IndexSearcher indexSearcher = indexSearcherList.get(documentHolder.getIndex());
+		Document document = indexSearcher.doc(documentHolder.getDoc());
 		String docName = document.get(MetaDocument.SysDocFieldName);
 		IndexDB indexDB = config.getIndexDBMap().get(dbName);
 		if(indexDB==null) throw new Exception("not found indexdb name="+dbName);
@@ -115,10 +118,12 @@ public class SearchContextImpl implements SearchContext {
 				one.put(metaField.getFieldName(),indexableField.stringValue());
 			}else if(metaField.getDataType().equals(MetaField.FILE_FIELD)){
 				//返回摘要
-				if(highlighter==null) initHighlighter(query, config, docName);
+				if(highlighter==null) initHighlighter(query, config);
 				String result = "";
 				try {
-					result = highlighter.getBestFragment(config.getAnalyzer(),metaField.getFieldName(),indexableField.stringValue());
+					Terms termVector = indexSearcher.getIndexReader().getTermVector(documentHolder.getDoc(),metaField.getFieldName()); 
+					TokenStream tokenStream = TokenSources.getTokenStream(termVector);    
+					result = highlighter.getBestFragment(tokenStream,indexableField.stringValue());
 				} catch (Exception e) {
 					System.out.println(e.toString());
 				} 
@@ -162,12 +167,11 @@ public class SearchContextImpl implements SearchContext {
 			}
 		}
 	}
-	private void initHighlighter(Query query,Config config,String docName){
+	private void initHighlighter(Query query,Config config){
 		SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<font color=’red’>","</font>");
 		highlighter =new Highlighter(simpleHTMLFormatter,new QueryScorer(query));
 		int fragmentSize = 200;
-		String temp = config.getConfigPara("highlighter."+docName+".fragmentSize");
-		if(temp==null) temp = config.getConfigPara("highlighter.fragmentSize");
+		String temp = config.getConfigPara("highlighter.fragmentSize");
 		if(temp !=null) fragmentSize = Integer.parseInt(temp);
 		highlighter.setTextFragmenter(new SimpleFragmenter(fragmentSize));
 	}
