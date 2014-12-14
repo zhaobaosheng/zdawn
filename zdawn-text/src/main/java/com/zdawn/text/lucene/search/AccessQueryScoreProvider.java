@@ -22,11 +22,11 @@ public class AccessQueryScoreProvider extends CustomScoreProvider {
 	@Override
 	public float customScore(int doc, float subQueryScore, float[] valSrcScores)
 			throws IOException {
-		float score =  super.customScore(doc, subQueryScore, valSrcScores);
 		IndexReader indexReader = context.reader();
 		Document document = indexReader.document(doc);
 		String value = document.get(accessFieldName);
-		return haveAccess(value) ? score:0f;
+		if(!haveAccess(value)) return 0f;
+		return  super.customScore(doc, subQueryScore, valSrcScores);
 	}
 	public void setAccessFieldName(String accessFieldName) {
 		this.accessFieldName = accessFieldName;
