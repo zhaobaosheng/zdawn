@@ -18,7 +18,7 @@ import com.zdawn.text.lucene.index.Indexer;
 public class TestIndex {
 	private ApplicationContext ctx = null;
 	private Indexer indexer = null;
-	private String path = "G:/UDP文档/B-工程管理";
+	private String path ="G:/UDP文档/B-工程管理";// "C:/Users/zhaobs/Desktop/test";
 	
 	public void initApplicationContext(){
 		ctx = new ClassPathXmlApplicationContext(new String[]{"classpath:applicationContext.xml","classpath:applicationContext-text.xml"});
@@ -83,7 +83,7 @@ public class TestIndex {
 	private void saveErrorDoc(File file){
 		FileOutputStream fos = null;
 		try {
-			fos = new FileOutputStream("C:/Users/zhaobs/Desktop/temp/error.txt");
+			fos = new FileOutputStream("C:/Users/zhaobs/Desktop/temp/error.txt",true);
 			fos.write(file.getPath().getBytes("UTF-8"));
 		} catch (Exception e) {
 			e.printStackTrace();
