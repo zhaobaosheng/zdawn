@@ -52,11 +52,15 @@ public class ContentSpliter {
 					line = splitRemains(sb,line,reader);
 					return sb.toString();
 				}else{
+					if(sb.length()>0){
+						char c = sb.charAt(sb.length()-1);
+						if(c!=' ' && !exist(seperator,c)) sb.append(' ');						
+					}
 					sb.append(line);
 				}
 			}
 			while(true){
-				line=reader.readLine();
+				line=readLine(reader);
 				if(line==null){
 					state=2;
 					break;
@@ -65,6 +69,10 @@ public class ContentSpliter {
 					line = splitRemains(sb,line,reader);
 					break;
 				}else{
+					if(sb.length()>0){
+						char c = sb.charAt(sb.length()-1);
+						if(c!=' ' && !exist(seperator,c)) sb.append(' ');						
+					}
 					sb.append(line);
 				}
 			}
@@ -121,7 +129,7 @@ public class ContentSpliter {
 		boolean found = false;
 		try {
 			while(true){
-				temp=reader.readLine();
+				temp=readLine(reader);
 				if(temp==null){
 					state=2;
 					break;
@@ -133,6 +141,10 @@ public class ContentSpliter {
 						found = true;
 						break;
 					}else{
+						if(i==0 && sb.length()>0){
+							char c = sb.charAt(sb.length()-1);
+							if(c!=' ' && !exist(seperator,c)) sb.append(' ');
+						}
 						sb.append(temp.charAt(i));
 					}
 				}
@@ -153,5 +165,36 @@ public class ContentSpliter {
 			if(seperator[i]==c) return true;
 		}
 		return false;
+	}
+	private String readLine(BufferedReader reader) throws IOException{
+		String line = null;
+		try {
+			while((line=reader.readLine())!=null){
+				line = filterWhiteSpace(line);
+				if(line!=null) break;
+			}
+		} catch (IOException e) {
+			throw e;
+		}
+		return line;
+	}
+	private String filterWhiteSpace(String origin){
+		StringBuilder sb = new StringBuilder();
+		int length = origin.length();
+		char prev = ' ';
+		for (int i = 0; i < length; i++) {
+			char c = origin.charAt(i);
+			if(c=='\n' || c=='\r' || c=='\t') c=' ';
+			if(c==' '){
+				if(prev !=' '){
+					sb.append(c);
+					prev=' ';
+				}
+			}else{
+				sb.append(c);
+				prev = c;
+			}
+		}
+		return sb.length()>0 ? sb.toString():null;
 	}
 }
