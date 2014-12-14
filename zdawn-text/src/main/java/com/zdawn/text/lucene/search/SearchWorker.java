@@ -39,8 +39,8 @@ public class SearchWorker implements Runnable {
 	public void run() {
 		try {
 			TopDocs topDocs = indexSearcher.search(query , topNum);
-			context.finishSearch();
 			context.setThreadData(indexSearcher, topDocs);
+			context.finishSearch();
 		} catch (Exception e) {
 			log.error("SearchWorker run", e);
 		}
