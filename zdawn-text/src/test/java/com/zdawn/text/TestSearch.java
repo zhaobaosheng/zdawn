@@ -26,8 +26,8 @@ public class TestSearch {
 		para.put("sort", "fileSize");
 		para.put("sortDataType", "number");
 		para.put("defaultField", "fileContent");
-		para.put("accessFieldName", "fileType");
-		para.put("accessValues", "ddd,aa");
+//		para.put("accessFieldName", "fileType");
+//		para.put("accessValues", "G:\\UDP文档\\B-工程管理\\B5-系统测试");
 		try {
 			System.out.println("---------------------searchTopDocument----------------------");
 			long start = System.currentTimeMillis();
@@ -41,7 +41,7 @@ public class TestSearch {
 			long end = System.currentTimeMillis();
 			System.out.println("searchTopDocument total="+(end-start)+"ms  size="+topList.size());
 			
-			/*System.out.println("---------------------searchPageDocument----------------------");
+			System.out.println("---------------------searchPageDocument----------------------");
 			start = System.currentTimeMillis();
 			Map<String, Object> map = seacher.searchPageDocument(dbName, para);
 			Set<Entry<String, Object>> set = map.entrySet();
@@ -60,7 +60,7 @@ public class TestSearch {
 				}
 			}
 			end = System.currentTimeMillis();
-			System.out.println("searchPageDocument total="+(end-start)+"ms");*/
+			System.out.println("searchPageDocument total="+(end-start)+"ms");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

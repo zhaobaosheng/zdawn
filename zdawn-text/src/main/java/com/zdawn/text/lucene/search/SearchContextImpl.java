@@ -82,16 +82,18 @@ public class SearchContextImpl implements SearchContext {
 		return totalHits;
 	}
 	
-	public List<Map<String, Object>> getQueryData(Config config,String dbName,Query query) throws Exception{
+	public List<Map<String, Object>> getQueryData(Config config,String dbName,
+			Query query, int topNum,String[] fieldName) throws Exception{
 		List<Map<String, Object>> dataSet = new ArrayList<Map<String,Object>>();
-		List<DocumentHolder> list = mergeTopDocs();
+		List<DocumentHolder> list = mergeTopDocs(topNum);
+		List<String> fieldnamesList = convertArrayToList(fieldName);
 		for (DocumentHolder documentHolder : list) {
-			dataSet.add(getDocumentData(documentHolder,config,dbName,query));
+			dataSet.add(getDocumentData(documentHolder,config,dbName,query,fieldnamesList));
 		}
 		return dataSet;
 	}
 	private Map<String, Object> getDocumentData(DocumentHolder documentHolder,
-			Config config,String dbName,Query query) throws Exception{
+			Config config,String dbName,Query query, List<String> fieldnamesList) throws Exception{
 		IndexSearcher indexSearcher = indexSearcherList.get(documentHolder.getIndex());
 		Document document = indexSearcher.doc(documentHolder.getDoc());
 		String docName = document.get(MetaDocument.SysDocFieldName);
@@ -102,6 +104,13 @@ public class SearchContextImpl implements SearchContext {
 		if(metaDoc==null) throw new Exception("not found document name="+docName);
 		Map<String, Object> one = new HashMap<String, Object>();
 		List<MetaField> metaFieldList = metaDoc.getFieldList();
+		if(fieldnamesList!=null){
+			List<MetaField> filterMetaFieldList = new ArrayList<MetaField>();
+			for (MetaField metaField : metaFieldList) {
+				if(fieldnamesList.contains(metaField.getFieldName())) filterMetaFieldList.add(metaField);
+			}
+			if(filterMetaFieldList.size()>0) metaFieldList = filterMetaFieldList;
+		}
 		for (MetaField metaField : metaFieldList) {
 			if(!metaField.getFieldType().stored()) continue;
 			IndexableField indexableField = document.getField(metaField.getFieldName());
@@ -114,7 +123,7 @@ public class SearchContextImpl implements SearchContext {
 				one.put(metaField.getFieldName(),indexableField.numericValue());
 			}else if(metaField.getDataType().equals(MetaField.DOUBLE_FIELD)){
 				one.put(metaField.getFieldName(),indexableField.numericValue());
-			}else if(metaField.getDataType().equals(MetaField.STRING_FIELD)){
+			}else if(metaField.getDataType().equals(MetaField.STRING_FIELD) && !metaField.isDocValues()){
 				one.put(metaField.getFieldName(),indexableField.stringValue());
 			}else if(metaField.getDataType().equals(MetaField.FILE_FIELD)){
 				//返回摘要
@@ -133,24 +142,30 @@ public class SearchContextImpl implements SearchContext {
 		return one;
 	}
 	
-	private List<DocumentHolder> mergeTopDocs(){
+	private List<DocumentHolder> mergeTopDocs(int topNum){
 		LinkedList<DocumentHolder> list = new LinkedList<DocumentHolder>();
 		boolean initList = false;
 		for (int i = 0; i < topDocArray.length; i++) {
 			if(topDocArray[i]==null) continue;
 			totalHits = totalHits +topDocArray[i].totalHits;
 			ScoreDoc[] temp = topDocArray[i].scoreDocs;
+			if(temp ==null || temp.length==0) continue;
+			if(temp[0].score==Float.NEGATIVE_INFINITY) continue;
 			if(!initList){//任意一个TopDocs初始化
 				for (ScoreDoc scoreDoc : temp) {
+					if(scoreDoc.score==Float.NEGATIVE_INFINITY) break;
 					list.add(new DocumentHolder(i, scoreDoc.score, scoreDoc.doc));
 				}
 				initList = true;
 			}else{//合并
 				for (ScoreDoc scoreDoc : temp) {
-					//取最后一个元素,与当前比较,大于当前元素退出循环
-					DocumentHolder holder = list.peekLast();
-					if(holder.getScore()>=scoreDoc.score) break;
-					insertDocumentHolder(list,scoreDoc,i);
+					if(scoreDoc.score==Float.NEGATIVE_INFINITY) break;
+					if(topNum==list.size()){
+						//取最后一个元素,与当前比较,大于当前元素退出循环
+						DocumentHolder holder = list.peekLast();
+						if(holder.getScore()>=scoreDoc.score) break;
+					}
+					insertDocumentHolder(list,scoreDoc,i,topNum);
 				}
 			}
 		}
@@ -158,12 +173,17 @@ public class SearchContextImpl implements SearchContext {
 	}
 	//插入元素
 	private void insertDocumentHolder(LinkedList<DocumentHolder> list,
-			ScoreDoc scoreDoc,int index) {
+			ScoreDoc scoreDoc,int index, int topNum) {
+		if(topNum>list.size()){
+			list.add(new DocumentHolder(index, scoreDoc.score, scoreDoc.doc));
+			return;
+		}
 		for (int j = 0; j < list.size(); j++) {
 			DocumentHolder holder = list.get(j);
 			if(scoreDoc.score>holder.getScore()){
 				list.add(j, new DocumentHolder(index, scoreDoc.score, scoreDoc.doc));
-				list.pollLast();
+				if(list.size()>topNum) list.pollLast();
+				return;
 			}
 		}
 	}
@@ -174,5 +194,11 @@ public class SearchContextImpl implements SearchContext {
 		String temp = config.getConfigPara("highlighter.fragmentSize");
 		if(temp !=null) fragmentSize = Integer.parseInt(temp);
 		highlighter.setTextFragmenter(new SimpleFragmenter(fragmentSize));
+	}
+	private List<String> convertArrayToList(String[] array){
+		if(array==null) return null;
+		List<String> list = new ArrayList<String>();
+		for (int i = 0; i < array.length; i++) list.add(array[i]);
+		return list;
 	}
 }

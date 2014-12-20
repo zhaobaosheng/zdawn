@@ -67,6 +67,7 @@
 	    <property name="description" value="文件分类" />
 	    <property name="dataType" value="string" />
 	    <property name="stored"  value="true"/>
+	    <property name="docValues"  value="true"/>
 	</bean>
 	<bean id="metaFileModifyDate"  class="com.zdawn.text.lucene.config.MetaField">
 	    <property name="fieldName" value="fileModifyDate" />

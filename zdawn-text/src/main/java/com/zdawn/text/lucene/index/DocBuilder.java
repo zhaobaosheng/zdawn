@@ -16,6 +16,7 @@ import org.apache.lucene.document.FloatField;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.util.BytesRef;
 
 import com.zdawn.text.lucene.config.MetaDocument;
 import com.zdawn.text.lucene.config.MetaField;
@@ -81,7 +82,11 @@ public class DocBuilder {
 			}
 		}else if(metaField.getDataType().equals(MetaField.STRING_FIELD)){
 			String value = obj.toString();
-			field = new Field(metaField.getFieldName(),value,metaField.getFieldType());
+			if(metaField.isDocValues()){
+				field = new Field(metaField.getFieldName(),new BytesRef(value),metaField.getFieldType());
+			}else{
+				field = new Field(metaField.getFieldName(),value,metaField.getFieldType());	
+			}
 		}
 		return field;
 	}

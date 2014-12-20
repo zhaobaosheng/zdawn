@@ -28,7 +28,7 @@ public class TestIndex {
 			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 			String fileId = UUID.randomUUID().toString();
 			String fileName = file.getName();
-			String fileType = file.getParent();
+			String fileType = cutOffPrefix(file.getParent(),"G:/");
 			String fileModifyDate = df.format(new Timestamp(file.lastModified()));
 			long fileSize = file.length();
 			String fileContent = file.getPath();
@@ -41,8 +41,15 @@ public class TestIndex {
 			fieldData.put("fileContent", fileContent);
 			indexer.createIndex("knowledge","attachmentDoc", fieldData );
 		} catch (Exception e) {
+			e.printStackTrace();
 			saveErrorDoc(file);
 		}
+	}
+	private String cutOffPrefix(String origin,String prefix){
+		if(prefix==null || prefix.equals("")) return origin;
+		origin = origin.replace('\\', '/');
+		if(!origin.startsWith(prefix))  return origin;
+		return origin.substring(prefix.length());
 	}
 	public void createIndex(){
 		try {
@@ -85,6 +92,7 @@ public class TestIndex {
 		try {
 			fos = new FileOutputStream("C:/Users/zhaobs/Desktop/temp/error.txt",true);
 			fos.write(file.getPath().getBytes("UTF-8"));
+			fos.write('\n');
 		} catch (Exception e) {
 			e.printStackTrace();
 		}finally{

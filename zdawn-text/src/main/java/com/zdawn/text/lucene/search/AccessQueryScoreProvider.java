@@ -3,8 +3,9 @@ package com.zdawn.text.lucene.search;
 import java.io.IOException;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.queries.CustomScoreProvider;
 /**
  * 检查权限
@@ -16,16 +17,33 @@ public class AccessQueryScoreProvider extends CustomScoreProvider {
 	
 	private String[] accessValue = null;
 	
+	private boolean useDocValues = true;
+	
+	private SortedDocValues docValues = null;
+	
 	public AccessQueryScoreProvider(AtomicReaderContext context){
 		super(context);
+	}
+	public void initDocValue() {
+		try {
+			AtomicReader indexReader = context.reader();
+			docValues = indexReader.getSortedDocValues(accessFieldName);
+			if( docValues ==null) useDocValues = false;
+		} catch (IOException e) {
+			System.out.println(e.toString());
+		}
 	}
 	@Override
 	public float customScore(int doc, float subQueryScore, float[] valSrcScores)
 			throws IOException {
-		IndexReader indexReader = context.reader();
-		Document document = indexReader.document(doc);
-		String value = document.get(accessFieldName);
-		if(!haveAccess(value)) return 0f;
+		String value = null;
+		if(useDocValues){
+			value = docValues.get(doc).utf8ToString();			
+		}else{
+			Document document = context.reader().document(doc);
+			value = document.get(accessFieldName);
+		}
+		if(!haveAccess(value)) return Float.NEGATIVE_INFINITY;
 		return  super.customScore(doc, subQueryScore, valSrcScores);
 	}
 	public void setAccessFieldName(String accessFieldName) {

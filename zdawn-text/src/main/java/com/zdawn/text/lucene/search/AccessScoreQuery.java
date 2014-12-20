@@ -32,6 +32,7 @@ public class AccessScoreQuery extends CustomScoreQuery {
 		AccessQueryScoreProvider provide = new AccessQueryScoreProvider(context);
 		provide.setAccessFieldName(accessFieldName);
 		provide.setAccessValue(accessValues.split(","));
+		provide.initDocValue();
 		return provide;
 	}
 }

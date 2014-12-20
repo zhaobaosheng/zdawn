@@ -55,8 +55,14 @@ public class SeacherImple implements Seacher {
 			putTaskByQueueDepth(worker);
 		}
 		context.await(millisTimeout);
+		
+		String fieldList = para.get("fieldList");
+		String[] fieldName = null;
+		if(fieldList!=null && !fieldList.equals("")){
+			fieldName = fieldList.split(",");
+		}
 		//collect search result
-		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query);
+		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query,topNum,fieldName);
 		//sort other field fieldName desc or asc
 		String sort = para.get("sort");
 		sort = sort==null ? "":sort;
@@ -109,7 +115,12 @@ public class SeacherImple implements Seacher {
 		}
 		context.await(millisTimeout);
 		//collect search result
-		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query);
+		String fieldList = para.get("fieldList");
+		String[] fieldName = null;
+		if(fieldList!=null && !fieldList.equals("")){
+			fieldName = fieldList.split(",");
+		}
+		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query,topNum,fieldName);
 		Map<String, Object> map = new HashMap<String, Object>();
 		if(dataSet.size()>0){
 			//sort other field fieldName desc or asc
