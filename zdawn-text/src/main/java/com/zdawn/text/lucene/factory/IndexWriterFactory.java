@@ -16,7 +16,7 @@ public interface IndexWriterFactory {
 	 */
 	public List<IndexWriter> getRetiredIndexWriter(String dbName);
 	/**
-	 * gain index db working IndexWriter
+	 * gain all index db working IndexWriter
 	 */
 	public List<IndexWriter> getWorkingIndexWriters(String dbName);
 	

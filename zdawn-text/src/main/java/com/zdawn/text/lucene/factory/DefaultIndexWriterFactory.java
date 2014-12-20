@@ -37,11 +37,25 @@ public class DefaultIndexWriterFactory implements IndexWriterFactory,DocumentTri
 	
 	private long currentCreateIndexCount = 0;
 	
+	private Map<String,Integer>  writerMemberIndexMap = new HashMap<String, Integer>();
+	
 	@Override
 	public IndexWriter getWorkingIndexWriter(String dbName) {
-		return getWorkingIndexWriters(dbName).get(0);
+		List<IndexWriter> writerList = getWorkingIndexWriters(dbName);
+		int writerMemberIndex = getWriterMemberIndex(dbName,writerList.size());
+		return writerList.get(writerMemberIndex);
 	}
-
+	private synchronized int getWriterMemberIndex(String dbName, int count){
+		if(count==1) return 0;
+		Integer writerMemberIndex = writerMemberIndexMap.get(dbName);
+		if(writerMemberIndex==null) writerMemberIndex = 0;
+		//next writerMemberIndex
+		Integer next = writerMemberIndex +1;
+		if(next>=count) next = 0;
+		writerMemberIndexMap.put(dbName, next);
+		return writerMemberIndex;
+	}
+	
 	private IndexWriterInfo createNewIndexWriterInfo(IndexDB indexDB){
 		IndexWriterInfo info =  new IndexWriterInfo();
 		try {
