@@ -1,6 +1,7 @@
 package com.zdawn.text.lucene.config;
 
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.index.FieldInfo.DocValuesType;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.util.NumericUtils;
 
@@ -54,6 +55,10 @@ public class MetaField {
 	 */
 	private boolean tokenized;
 	/**
+	 * 是否DocValues的类型
+	 */
+	private boolean docValues;
+	/**
 	 * 字段索引和存储信息
 	 */
 	private FieldType fieldType = null;
@@ -70,7 +75,10 @@ public class MetaField {
 				fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 				fieldType.setStoreTermVectorPositions(true);
 				fieldType.setStoreTermVectorOffsets(true);
-				fieldType.setStoreTermVectors(true);
+				fieldType.setStoreTermVectors(true);	
+			}
+			if(docValues && dataType.equals(STRING_FIELD)){
+				fieldType.setDocValueType(DocValuesType.SORTED);
 			}
 		    fieldType.freeze();
 		}else{
@@ -86,6 +94,7 @@ public class MetaField {
 		fieldType.setOmitNorms(true);
 		fieldType.setIndexOptions(IndexOptions.DOCS_ONLY);
 		if(stored) fieldType.setStored(true);
+		if(docValues) fieldType.setDocValueType(DocValuesType.SORTED_NUMERIC);
 		
 		if(dataType.equals(INT_FIELD)){
 			fieldType.setNumericType(FieldType.NumericType.INT);
@@ -129,6 +138,14 @@ public class MetaField {
 
 	public void setTokenized(boolean tokenized) {
 		this.tokenized = tokenized;
+	}
+
+	public void setDocValues(boolean docValues) {
+		this.docValues = docValues;
+	}
+
+	public boolean isDocValues() {
+		return docValues;
 	}
 
 	public FieldType getFieldType() {
