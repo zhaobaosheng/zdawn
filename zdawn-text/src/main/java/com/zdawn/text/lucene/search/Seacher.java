@@ -40,7 +40,7 @@ public interface Seacher {
 	 * @param para 查询条件
 	 * <br>key=queryString lucene查询语法
 	 * <br>key=topNum 查询最大记录数 默认100 可选
-	 * <br>key=sort 排序字段 可选  暂时支持一个字段
+	 * <br>key=sort 排序字段(按文档评分检索出结果在按某个字段排序) 可选  暂时支持一个字段
 	 * <br>key=sortDataType 排序字段数据类型 string or number 不传本参数默认为string
 	 * <br>key=sortAsc 是否升序 true or false 不传本参数默认为false降序
 	 * <br>key=fieldList 查询数据列表 逗号分隔 可选
@@ -57,11 +57,12 @@ public interface Seacher {
 	 * <br>cacheId 缓存Id 可选
 	 * <br>page 当前页从1开始，默认1
 	 * <br>rows 每页查询记录数，默认10
-	 * <br>其它查询参数@searchTopDocument方法
+ 	 * <br>其它查询参数@searchTopDocument方法
 	 * @return 分页数据
 	 * <br>key=totalHits 检索总结果数量
 	 * <br>key=cacheId 缓存Id，作为查询参数回传可利用上次查询结果
-	 * <br>key=total 总数
+	 * <br>key=page 当前页
+	 * <br>key= 总数
 	 * <br>key=rows 分页数据
 	 * <br>List&lt;Map&lt;String,Object&gt;&gt;
 	 */

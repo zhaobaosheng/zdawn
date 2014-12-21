@@ -120,8 +120,16 @@ public class SeacherImple implements Seacher {
 		if(fieldList!=null && !fieldList.equals("")){
 			fieldName = fieldList.split(",");
 		}
-		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query,topNum,fieldName);
-		Map<String, Object> map = new HashMap<String, Object>();
+		//处理分页
+		int page = 1,pageSize = 10,pageCount=0;
+		String temp = para.get("page");
+		if(temp!=null) page = Integer.parseInt(temp);
+		temp = para.get("rows");
+		if(temp!=null) pageSize = Integer.parseInt(temp);
+		if (topNum % pageSize == 0) pageCount = topNum / pageSize;
+		else pageCount = topNum / pageSize + 1;
+		page = page > pageCount ? pageCount:page;
+		List<Map<String, Object>> dataSet = context.getPageQueryData(config, dbName, query,page,pageSize,topNum,fieldName);
 		if(dataSet.size()>0){
 			//sort other field fieldName desc or asc
 			String sort = para.get("sort");
@@ -139,23 +147,11 @@ public class SeacherImple implements Seacher {
 				}
 				Collections.sort(dataSet, comparator);
 			}
-			//分页返回数据
-			int page = 1,pageSize = 10,pageCount=0;
-			String temp = para.get("page");
-			if(temp!=null) page = Integer.parseInt(temp);
-			temp = para.get("rows");
-			if(temp!=null) pageSize = Integer.parseInt(temp);
-			if(dataSet.size()<pageSize) pageSize = dataSet.size();
-			if (dataSet.size() % pageSize == 0) pageCount = dataSet.size() / pageSize;
-			else pageCount = dataSet.size() / pageSize + 1;
-			page = page > pageCount ? pageCount:page;
-			int start = (page-1)*pageSize;
-			int end = page*pageSize > dataSet.size() ? dataSet.size()-1:page*pageSize-1;
-			map.put("rows",dataSet.subList(start, end));
-		}else{
-			map.put("rows",dataSet);
 		}
-		map.put("total",dataSet.size());
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("topNum",String.valueOf(topNum));
+		map.put("rows",dataSet);
+		map.put("page",page);
 		map.put("cacheId",-1);
 		map.put("totalHits",context.getTotalHits());
 		return map;

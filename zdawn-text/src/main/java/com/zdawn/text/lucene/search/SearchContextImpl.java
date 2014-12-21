@@ -81,7 +81,7 @@ public class SearchContextImpl implements SearchContext {
 	public int getTotalHits() {
 		return totalHits;
 	}
-	
+	//获取查询数据
 	public List<Map<String, Object>> getQueryData(Config config,String dbName,
 			Query query, int topNum,String[] fieldName) throws Exception{
 		List<Map<String, Object>> dataSet = new ArrayList<Map<String,Object>>();
@@ -92,6 +92,18 @@ public class SearchContextImpl implements SearchContext {
 		}
 		return dataSet;
 	}
+	//分页获取查询数据
+	public List<Map<String, Object>> getPageQueryData(Config config,String dbName,
+			Query query, int currentPage,int pageCount,int topNum,String[] fieldName) throws Exception{
+		List<Map<String, Object>> dataSet = new ArrayList<Map<String,Object>>();
+		List<DocumentHolder> list = mergePageTopDocs(currentPage,pageCount,topNum);
+		List<String> fieldnamesList = convertArrayToList(fieldName);
+		for (DocumentHolder documentHolder : list) {
+			dataSet.add(getDocumentData(documentHolder,config,dbName,query,fieldnamesList));
+		}
+		return dataSet;
+	}
+	
 	private Map<String, Object> getDocumentData(DocumentHolder documentHolder,
 			Config config,String dbName,Query query, List<String> fieldnamesList) throws Exception{
 		IndexSearcher indexSearcher = indexSearcherList.get(documentHolder.getIndex());
@@ -142,7 +154,28 @@ public class SearchContextImpl implements SearchContext {
 		return one;
 	}
 	
-	private List<DocumentHolder> mergeTopDocs(int topNum){
+	private List<DocumentHolder> mergePageTopDocs(int currentPage,
+			int pageSize, int topNum) {
+		int start = (currentPage-1)*pageSize;
+		int end = currentPage*pageSize > topNum ? topNum-1:currentPage*pageSize-1;
+		for (int i = 0; i < topDocArray.length; i++){
+			if(topDocArray[i]==null) continue;
+			ScoreDoc[] temp = topDocArray[i].scoreDocs;
+			if(temp ==null || temp.length==0) continue;
+			if(start>temp.length-1) {
+				topDocArray[i].scoreDocs = null;
+				continue;
+			}
+			int endLength = end >temp.length-1 ? temp.length-1: end;
+			int length = endLength-start +1;
+			ScoreDoc[] subTemp = new ScoreDoc[length];
+			System.arraycopy(temp, start, subTemp, 0, length);
+			topDocArray[i].scoreDocs = subTemp;
+		}
+		return mergeTopDocs(pageSize);
+	}
+	
+	private List<DocumentHolder> mergeTopDocs(int maxNum){
 		LinkedList<DocumentHolder> list = new LinkedList<DocumentHolder>();
 		boolean initList = false;
 		for (int i = 0; i < topDocArray.length; i++) {
@@ -153,19 +186,21 @@ public class SearchContextImpl implements SearchContext {
 			if(temp[0].score==Float.NEGATIVE_INFINITY) continue;
 			if(!initList){//任意一个TopDocs初始化
 				for (ScoreDoc scoreDoc : temp) {
+					if(scoreDoc==null) continue;
 					if(scoreDoc.score==Float.NEGATIVE_INFINITY) break;
 					list.add(new DocumentHolder(i, scoreDoc.score, scoreDoc.doc));
 				}
 				initList = true;
 			}else{//合并
 				for (ScoreDoc scoreDoc : temp) {
+					if(scoreDoc==null) continue; 
 					if(scoreDoc.score==Float.NEGATIVE_INFINITY) break;
-					if(topNum==list.size()){
+					if(maxNum==list.size()){
 						//取最后一个元素,与当前比较,大于当前元素退出循环
 						DocumentHolder holder = list.peekLast();
 						if(holder.getScore()>=scoreDoc.score) break;
 					}
-					insertDocumentHolder(list,scoreDoc,i,topNum);
+					insertDocumentHolder(list,scoreDoc,i,maxNum);
 				}
 			}
 		}
