@@ -63,12 +63,14 @@ public class QueryConfigXMLLoader {
 			NodeList list = element.getElementsByTagName("SelectSql");
 			if(list.getLength()!=1) throw new RuntimeException("SelectSql Node error!");
 			Element temp =(Element)list.item(0);
-			queryConfig.setSelectSql(temp.getFirstChild().getNodeValue());
+			queryConfig.setSelectSql(temp.getTextContent());
 			//read CountSql
 			list = element.getElementsByTagName("CountSql");
-			if(list.getLength()!=1) throw new RuntimeException("CountSql Node error!");
-			temp =(Element)list.item(0);
-			queryConfig.setCountSql(temp.getFirstChild().getNodeValue());
+			if(list.getLength()>0){
+				if(list.getLength()!=1) throw new RuntimeException("CountSql Node error!");
+				temp =(Element)list.item(0);
+				queryConfig.setCountSql(temp.getTextContent());
+			}
 			//read ParameterMapper
 			readParameterMapper(element,queryConfig);
 			metaQuery.addQueryConfig(queryConfig);
