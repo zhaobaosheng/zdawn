@@ -114,6 +114,7 @@ public class QueryExecutor {
 			total = getTotalCount(connection,countSql,countTokenList,queryConfig.getParameterMapper(),para);
 		}
 		String pageSql = pagingSqlDecorator.decoratePagingSql(sql,limit,total,currentPage);
+		if(pageSql.equals("")) pageSql=sql;
 		List<Map<String, String>> data = searchStringMapData(connection,pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
 		PageDataSet<Map<String, String>> dataSet = new PageDataSet<Map<String,String>>(data);
 		dataSet.setTotal(total);
@@ -181,6 +182,7 @@ public class QueryExecutor {
 			total = getTotalCount(connection,countSql,countTokenList,queryConfig.getParameterMapper(),para);
 		}
 		String pageSql = pagingSqlDecorator.decoratePagingSql(sql,limit,total,currentPage);
+		if(pageSql.equals("")) pageSql=sql;
 		List<Map<String,Object>> data = searchObjectMapData(connection,pageSql,questionTokenList,queryConfig.getParameterMapper(),resultMapper,para);
 		PageDataSet<Map<String,Object>> dataSet = new PageDataSet<Map<String,Object>>(data);
 		dataSet.setTotal(total);
@@ -267,7 +269,8 @@ public class QueryExecutor {
 		List<Token> tokenList = sqlTokenMap.get(queryConfig.getCode().concat("-count"));
 		if(tokenList==null){
 			PlaceHolderParser parser = new PlaceHolderParser();
-			tokenList = parser.parsePlaceHolderString(queryConfig.getCountSql());
+			String filterSql = parser.filterWhiteSpace(queryConfig.getCountSql());
+			tokenList = parser.parsePlaceHolderString(filterSql);
 			if(tokenList!=null){
 				sqlTokenMap.put(queryConfig.getCode().concat("-count"),tokenList);
 				//解析成符号-释放内存
