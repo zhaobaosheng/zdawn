@@ -468,8 +468,10 @@ public class QueryExecutor {
 		for (ResultItem resultItem : resultItemList) {
 			String columnLabel = resultItem.getColumn().length() == 0 ? 
 					resultItem.getProperty() : resultItem.getColumn();
+			String propertyKey = resultItem.getProperty().length() == 0 ? resultItem
+					.getColumn() : resultItem.getProperty();
 			AbstractType abstractType = TypeUtil.getDataType(resultItem.getType());
-			map.put(columnLabel,abstractType.get(resultset, columnLabel));
+			map.put(propertyKey,abstractType.get(resultset, columnLabel));
 		}
 		return map;
 	}
@@ -480,14 +482,16 @@ public class QueryExecutor {
 		for (ResultItem resultItem : resultItemList) {
 			String columnLabel = resultItem.getColumn().length() == 0 ? 
 					resultItem.getProperty() : resultItem.getColumn();
+			String propertyKey = resultItem.getProperty().length() == 0 ? resultItem
+					.getColumn() : resultItem.getProperty();
 			if ("java.util.Date".equals(resultItem.getType())
 					|| "java.sql.Date".equals(resultItem.getType())
 					|| "java.sql.Timestamp".equals(resultItem.getType())) {
 				Object value = resultset.getTimestamp(columnLabel);
-				map.put(columnLabel,ConvertUtil.convertDateFormat(value,
+				map.put(propertyKey,ConvertUtil.convertDateFormat(value,
 								resultItem.getToStringformat()));
 			}else{
-				map.put(columnLabel,resultset.getString(columnLabel));
+				map.put(propertyKey,resultset.getString(columnLabel));
 			}
 		}
 		return map;
