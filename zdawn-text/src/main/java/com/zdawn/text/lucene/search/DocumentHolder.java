@@ -1,5 +1,7 @@
 package com.zdawn.text.lucene.search;
 
+import java.util.Comparator;
+
 
 /**
  * @author zhaobs
@@ -29,5 +31,15 @@ public class DocumentHolder {
 
 	public int getDoc() {
 		return doc;
+	}
+}
+class DocIdComparator implements Comparator<DocumentHolder> {
+
+	@Override
+	public int compare(DocumentHolder o1, DocumentHolder o2) {
+		if (o1 == null || o2 == null) return 0;
+        if (o1 == o2) return 0;
+        if (o1.getDoc() == o2.getDoc()) return 0;
+		return o1.getDoc()>o2.getDoc() ?1:-1 ;
 	}
 }

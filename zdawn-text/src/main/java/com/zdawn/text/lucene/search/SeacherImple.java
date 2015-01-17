@@ -10,12 +10,16 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.zdawn.commons.concurrent.task.DisposeUnit;
 import com.zdawn.text.lucene.config.Config;
 import com.zdawn.text.lucene.factory.IndexSearcherFactory;
 
 public class SeacherImple implements Seacher {
+	private static final Logger log = LoggerFactory.getLogger(SeacherImple.class);
+	
 	private IndexSearcherFactory indexSearcherFactory;
 	//dispose unit
 	private List<DisposeUnit> disposeUnitList;
@@ -47,7 +51,8 @@ public class SeacherImple implements Seacher {
 		}
 		String stringNum = para.get("topNum");
 		int topNum = stringNum==null || stringNum.equals("") ? 100:Integer.parseInt(stringNum);
-		
+		//search data
+		long start = System.currentTimeMillis();
 		for (int i = 0; i < indexSearcherList.size(); i++) {
 			IndexSearcher indexSearcher = indexSearcherList.get(i);
 			SearchWorker worker = new SearchWorker(indexSearcher, query, context);
@@ -55,14 +60,30 @@ public class SeacherImple implements Seacher {
 			putTaskByQueueDepth(worker);
 		}
 		context.await(millisTimeout);
-		
+		//merge document
+		List<DocumentHolder> list = context.mergeTopDocs(topNum);
+		long searchEnd = System.currentTimeMillis();
+		//collect search result
 		String fieldList = para.get("fieldList");
 		String[] fieldName = null;
 		if(fieldList!=null && !fieldList.equals("")){
 			fieldName = fieldList.split(",");
 		}
-		//collect search result
-		List<Map<String, Object>> dataSet = context.getQueryData(config, dbName, query,topNum,fieldName);
+		DocDataContext docDataContext = new DocDataContext(indexSearcherList.size());
+		docDataContext.setConfig(config);
+		docDataContext.setDbName(dbName);
+		docDataContext.setQuery(query);
+		docDataContext.setFieldName(fieldName);
+		for (int i = 0; i < indexSearcherList.size(); i++) {
+			IndexSearcher indexSearcher = indexSearcherList.get(i);
+			DocDataWorker worker = new DocDataWorker(indexSearcher, i, list, docDataContext);
+			putTaskByQueueDepth(worker);
+		}
+		docDataContext.await(millisTimeout);
+		List<Map<String, Object>> dataSet = docDataContext.getDataSet();
+		long dataEnd = System.currentTimeMillis();
+		if(log.isDebugEnabled()) log.debug("search time "+(searchEnd-start)
+				+" ms | get data time "+(dataEnd-searchEnd)+" ms" +" | total="+(dataEnd-start)+" ms");
 		//sort other field fieldName desc or asc
 		String sort = para.get("sort");
 		sort = sort==null ? "":sort;
@@ -77,6 +98,9 @@ public class SeacherImple implements Seacher {
 			}else{
 				comparator = new StringFieldComparator(sort,sortAsc);
 			}
+			Collections.sort(dataSet, comparator);
+		}else{//score sort
+			Comparator<Map<String, Object>> comparator = new NumberFieldComparator("__score","false");
 			Collections.sort(dataSet, comparator);
 		}
 		return dataSet;
@@ -106,7 +130,8 @@ public class SeacherImple implements Seacher {
 		}
 		String stringNum = para.get("topNum");
 		int topNum = stringNum==null || stringNum.equals("") ? 100:Integer.parseInt(stringNum);
-		
+		//search data
+		long start = System.currentTimeMillis();
 		for (int i = 0; i < indexSearcherList.size(); i++) {
 			IndexSearcher indexSearcher = indexSearcherList.get(i);
 			SearchWorker worker = new SearchWorker(indexSearcher, query, context);
@@ -129,7 +154,24 @@ public class SeacherImple implements Seacher {
 		if (topNum % pageSize == 0) pageCount = topNum / pageSize;
 		else pageCount = topNum / pageSize + 1;
 		page = page > pageCount ? pageCount:page;
-		List<Map<String, Object>> dataSet = context.getPageQueryData(config, dbName, query,page,pageSize,topNum,fieldName);
+		//merge document
+		List<DocumentHolder> list = context.mergePageTopDocs(page, pageSize, topNum);
+		long searchEnd = System.currentTimeMillis();
+		DocDataContext docDataContext = new DocDataContext(indexSearcherList.size());
+		docDataContext.setConfig(config);
+		docDataContext.setDbName(dbName);
+		docDataContext.setQuery(query);
+		docDataContext.setFieldName(fieldName);
+		for (int i = 0; i < indexSearcherList.size(); i++) {
+			IndexSearcher indexSearcher = indexSearcherList.get(i);
+			DocDataWorker worker = new DocDataWorker(indexSearcher, i, list, docDataContext);
+			putTaskByQueueDepth(worker);
+		}
+		docDataContext.await(millisTimeout);
+		List<Map<String, Object>> dataSet = docDataContext.getDataSet();
+		long dataEnd = System.currentTimeMillis();
+		if(log.isDebugEnabled()) log.debug("search time "+(searchEnd-start)
+				+" ms | get data time "+(dataEnd-searchEnd)+" ms" +" | total="+(dataEnd-start)+" ms");
 		if(dataSet.size()>0){
 			//sort other field fieldName desc or asc
 			String sort = para.get("sort");
@@ -145,6 +187,9 @@ public class SeacherImple implements Seacher {
 				}else{
 					comparator = new StringFieldComparator(sort,sortAsc);
 				}
+				Collections.sort(dataSet, comparator);
+			}else{//score sort
+				Comparator<Map<String, Object>> comparator = new NumberFieldComparator("__score","false");
 				Collections.sort(dataSet, comparator);
 			}
 		}

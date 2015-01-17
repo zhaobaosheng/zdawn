@@ -65,7 +65,7 @@ public class MetaField {
 	/**
 	 * 初始化FieldType
 	 */
-	public void initFieldType(){
+	public synchronized void initFieldType(){
 		if(dataType.equals(STRING_FIELD) || dataType.equals(FILE_FIELD)){
 			fieldType = new FieldType();
 			fieldType.setIndexed(indexed);

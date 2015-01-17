@@ -35,6 +35,6 @@ public class NumberFieldComparator implements Comparator<Map<String, Object>> {
         	n2 = Double.valueOf(value2.toString());
         }
         int result =n1.doubleValue()==n2.doubleValue()?0:n1.doubleValue()> n2.doubleValue() ? 1:-1;
-		return asc ? -result:result;
+		return asc ? result:-result;
 	}
 }

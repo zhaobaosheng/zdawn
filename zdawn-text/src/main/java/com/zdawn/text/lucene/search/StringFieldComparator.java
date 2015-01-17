@@ -25,7 +25,7 @@ public class StringFieldComparator implements Comparator<Map<String, Object>> {
         Object value2 = o2.get(fieldName);
         if(value2==null) value2 = "";
         int result = collator.compare(value1.toString(), value2.toString());
-		return asc ? -result:result;
+		return asc ? result:-result;
 	}
 	
 }
