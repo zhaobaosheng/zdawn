@@ -50,8 +50,9 @@ public class DocDataWorker implements Runnable {
 			 List<String> fieldnamesList = convertArrayToList(context.getFieldName());
 			List<Map<String, Object>> dataSet = new ArrayList<Map<String,Object>>();
 			for (DocumentHolder documentHolder : list) {
-				if(documentHolder.getIndex()==index) continue;
-				dataSet.add(getDocumentData(documentHolder,context.getConfig(),context.getDbName(),context.getQuery(),fieldnamesList));
+				if(documentHolder.getIndex() == index){
+					dataSet.add(getDocumentData(documentHolder,context.getConfig(),context.getDbName(),context.getQuery(),fieldnamesList));
+				}
 			}
 			context.setData(dataSet);
 			context.finishSearch();
