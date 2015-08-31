@@ -27,7 +27,7 @@ public class MySqlPagingSqlDecorator implements PagingSqlDecorator {
 			if (currentPage > pageCount) {
 				currentPage = pageCount;
 			}
-			begin = (currentPage - 1) * pageSize + 1;
+			begin = (currentPage - 1) * pageSize;
 			sb.append("select * from (");
 			sb.append(sql);
 			sb.append(") t limit ");
