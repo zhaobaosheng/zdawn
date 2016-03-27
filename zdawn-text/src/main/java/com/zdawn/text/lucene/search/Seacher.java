@@ -61,8 +61,8 @@ public interface Seacher {
 	 * @return 分页数据
 	 * <br>key=totalHits 检索总结果数量
 	 * <br>key=cacheId 缓存Id，作为查询参数回传可利用上次查询结果
-	 * <br>key=page 当前页
-	 * <br>key= 总数
+	 * <br>key=page当前页
+	 * <br>key=total总数
 	 * <br>key=rows 分页数据
 	 * <br>List&lt;Map&lt;String,Object&gt;&gt;
 	 */

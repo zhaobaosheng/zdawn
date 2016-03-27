@@ -1,5 +1,6 @@
 package com.zdawn.text.lucene.search;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -60,24 +61,14 @@ public class SearchContextImpl implements SearchContext {
 	}
 	//分页合并搜索结果
 	public List<DocumentHolder> mergePageTopDocs(int currentPage,
-			int pageSize, int topNum) {
+			int pageSize, int topNum) {		
+		List<DocumentHolder> topDocumentHolder = mergeTopDocs(pageSize);
 		int start = (currentPage-1)*pageSize;
-		int end = currentPage*pageSize > topNum ? topNum-1:currentPage*pageSize-1;
-		for (int i = 0; i < topDocArray.length; i++){
-			if(topDocArray[i]==null) continue;
-			ScoreDoc[] temp = topDocArray[i].scoreDocs;
-			if(temp ==null || temp.length==0) continue;
-			if(start>temp.length-1) {
-				topDocArray[i].scoreDocs = null;
-				continue;
-			}
-			int endLength = end >temp.length-1 ? temp.length-1: end;
-			int length = endLength-start +1;
-			ScoreDoc[] subTemp = new ScoreDoc[length];
-			System.arraycopy(temp, start, subTemp, 0, length);
-			topDocArray[i].scoreDocs = subTemp;
-		}
-		return mergeTopDocs(pageSize);
+		int end = currentPage*pageSize > topDocumentHolder.size() ? topDocumentHolder.size()-1:currentPage*pageSize-1;
+		int length = end-start +1;
+		List<DocumentHolder> pageData = new ArrayList<DocumentHolder>();
+		System.arraycopy(topDocumentHolder, start, pageData, 0, length);
+		return pageData;
 	}
 	//合并搜索结果
 	public List<DocumentHolder> mergeTopDocs(int maxNum){

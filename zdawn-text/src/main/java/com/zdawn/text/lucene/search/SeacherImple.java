@@ -130,21 +130,6 @@ public class SeacherImple implements Seacher {
 		}
 		String stringNum = para.get("topNum");
 		int topNum = stringNum==null || stringNum.equals("") ? 100:Integer.parseInt(stringNum);
-		//search data
-		long start = System.currentTimeMillis();
-		for (int i = 0; i < indexSearcherList.size(); i++) {
-			IndexSearcher indexSearcher = indexSearcherList.get(i);
-			SearchWorker worker = new SearchWorker(indexSearcher, query, context);
-			worker.setCount(topNum);
-			putTaskByQueueDepth(worker);
-		}
-		context.await(millisTimeout);
-		//collect search result
-		String fieldList = para.get("fieldList");
-		String[] fieldName = null;
-		if(fieldList!=null && !fieldList.equals("")){
-			fieldName = fieldList.split(",");
-		}
 		//处理分页
 		int page = 1,pageSize = 10,pageCount=0;
 		String temp = para.get("page");
@@ -154,8 +139,26 @@ public class SeacherImple implements Seacher {
 		if (topNum % pageSize == 0) pageCount = topNum / pageSize;
 		else pageCount = topNum / pageSize + 1;
 		page = page > pageCount ? pageCount:page;
+		//should search max count
+		int searchCount = page*pageSize >topNum ? topNum:page*pageSize;
+		//search data
+		long start = System.currentTimeMillis();
+		for (int i = 0; i < indexSearcherList.size(); i++) {
+			IndexSearcher indexSearcher = indexSearcherList.get(i);
+			SearchWorker worker = new SearchWorker(indexSearcher, query, context);
+			worker.setCount(searchCount);
+			putTaskByQueueDepth(worker);
+		}
+		context.await(millisTimeout);
 		//merge document
-		List<DocumentHolder> list = context.mergePageTopDocs(page, pageSize, topNum);
+		List<DocumentHolder> list = context.mergePageTopDocs(page, pageSize, searchCount);
+		
+		//collect search result
+		String fieldList = para.get("fieldList");
+		String[] fieldName = null;
+		if(fieldList!=null && !fieldList.equals("")){
+			fieldName = fieldList.split(",");
+		}
 		long searchEnd = System.currentTimeMillis();
 		DocDataContext docDataContext = new DocDataContext(indexSearcherList.size());
 		docDataContext.setConfig(config);
