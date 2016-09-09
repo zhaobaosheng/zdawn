@@ -5,11 +5,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.web.servlet.View;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zdawn.util.vo.VOUtil;
 
 public class JacksonView implements View {
@@ -42,7 +42,7 @@ public class JacksonView implements View {
 	public void render(Map<String, ?> model, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 		prepareResponse(request,response);
-		JsonGenerator generator = objectMapper.getJsonFactory().createJsonGenerator(
+		JsonGenerator generator = objectMapper.getFactory().createGenerator(
 				response.getOutputStream(), encoding);
 		Object value = model.get("ResponseMessage");
 		if(value==null) value = VOUtil.createResponseMessage("false", "data not found", "");

@@ -8,8 +8,12 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <org.slf4j.version>1.6.1</org.slf4j.version>
-    <org.springframework.version>3.0.6.RELEASE</org.springframework.version>
+    <org.slf4j.version>1.7.12</org.slf4j.version>
+    <org.springframework.version>4.2.6.RELEASE</org.springframework.version>
+    <jackson.version>2.6.1</jackson.version>
+    <aspectj.version>1.7.4</aspectj.version>
+    <c3p0.version>0.9.1</c3p0.version>
+    <junit.version>4.11</junit.version>
   </properties>
 
   <dependencies>
@@ -59,41 +63,48 @@
 		<version>${org.springframework.version}</version>
 	</dependency>
 	<dependency>
-		<groupId>org.codehaus.jackson</groupId>
-		<artifactId>jackson-mapper-asl</artifactId>
-		<version>1.9.0</version>
-	</dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-core</artifactId>
+         <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+          <version>${jackson.version}</version>
+    </dependency>
 	<dependency>
 		<groupId>javax.servlet</groupId>
 		<artifactId>javax.servlet-api</artifactId>
 		<version>3.0.1</version>
+		<scope>provided</scope>
 	</dependency>
 	<dependency>
 		<groupId>c3p0</groupId>
 		<artifactId>c3p0</artifactId>
-		<version>0.9.1</version>
+		<version>${c3p0.version}</version>
 	</dependency>
-	<dependency>
+<!-- 	<dependency>
 		<groupId>com.oracle</groupId>
 		<artifactId>ojdbc14</artifactId>
 		<version>10.2.0.4.0</version>
-	</dependency>
+	</dependency> -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
 	<dependency>
 		<groupId>org.aspectj</groupId>
 		<artifactId>aspectjweaver</artifactId>
-		<version>1.6.11</version>
+		<version>${aspectj.version}</version>
+		<scope>runtime</scope>
 	</dependency>
-	<dependency>
+<!-- 	<dependency>
 		<groupId>cglib</groupId>
 		<artifactId>cglib-nodep</artifactId>
 		<version>2.1_3</version>
-	</dependency>
+	</dependency> -->
   </dependencies>
   <build>
 		<plugins>
@@ -102,12 +113,20 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.8</source>
+					<target>1.8</target>
 					<encoding>utf-8</encoding>
 					<showWarnings>true</showWarnings>
+					 <skip>true</skip>
 				</configuration> 
 			</plugin>
+			<plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-surefire-plugin</artifactId>
+		        <configuration>
+		          <skip>true</skip>
+		        </configuration>
+      		</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -124,6 +143,14 @@
 				</includes>
 				<directory>src/main/java</directory>
 			</resource>
+			<!-- <resource>
+				<includes>
+					<include>**/*.xml</include>
+					<include>**/*.properties</include>
+					<include>**/*.ftl</include>
+				</includes>
+				<directory>src/main/resources</directory>
+			</resource> -->
 		</resources>
 	</build>
 </project>

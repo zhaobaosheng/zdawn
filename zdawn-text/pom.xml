@@ -13,7 +13,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <lucene.version>4.9.0</lucene.version>
-    <org.slf4j.version>1.6.1</org.slf4j.version>
   </properties>
 
   <dependencies>
@@ -52,23 +51,6 @@
   	<artifactId>zdawn-commons</artifactId>
   	<version>1.0</version>
   </dependency>
-  <dependency>
-		<groupId>org.slf4j</groupId>
-		<artifactId>slf4j-api</artifactId>
-		<version>${org.slf4j.version}</version>
-	</dependency>
-	<dependency>
-		<groupId>org.slf4j</groupId>
-		<artifactId>slf4j-log4j12</artifactId>
-		<version>${org.slf4j.version}</version>
-		<scope>runtime</scope>
-	</dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
    <build>
 		<plugins>
@@ -77,8 +59,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 					<encoding>utf-8</encoding>
 					<showWarnings>true</showWarnings>
 				</configuration> 

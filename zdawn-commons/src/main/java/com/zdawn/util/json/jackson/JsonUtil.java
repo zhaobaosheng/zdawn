@@ -6,12 +6,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.zdawn.util.Utils;
 import com.zdawn.util.vo.VOUtil;
 
@@ -84,7 +84,7 @@ public class JsonUtil {
 			JsonNode obj) {
 		if(childDatas==null) return;
 		Map<String, String> child = new HashMap<String,String>();
-		Iterator<String> it = obj.getFieldNames();
+		Iterator<String> it = obj.fieldNames();
 		while (it.hasNext()) {
 			String name = it.next();
 			JsonNode temp = obj.path(name);
@@ -124,13 +124,13 @@ public class JsonUtil {
 		try {
 			JsonNode rootNode = mapper.readValue(params, JsonNode.class);
 			responseData = new HashMap<String, String>();
-			String value = rootNode.path("result").getTextValue();
+			String value = rootNode.path("result").textValue();
 			responseData.put("result", value);
-			value = rootNode.path("desc").getTextValue();
+			value = rootNode.path("desc").textValue();
 			responseData.put("desc", value);
 			JsonNode customerNode = rootNode.path("data");
 			if(customerNode==null) return responseData;
-			Iterator<String> it = customerNode.getFieldNames();
+			Iterator<String> it = customerNode.fieldNames();
 			while (it.hasNext()) {
 				String name = it.next();
 				JsonNode temp = customerNode.path(name);
@@ -170,13 +170,13 @@ public class JsonUtil {
 		try {
 			JsonNode rootNode = mapper.readValue(params, JsonNode.class);
 			responseData = new HashMap<String, Object>();
-			String value = rootNode.path("result").getTextValue();
+			String value = rootNode.path("result").textValue();
 			responseData.put("result", value);
-			value = rootNode.path("desc").getTextValue();
+			value = rootNode.path("desc").textValue();
 			responseData.put("desc", value);
 			JsonNode customerNode = rootNode.path("data");
 			if(customerNode==null) return responseData;
-			Iterator<String> it = customerNode.getFieldNames();
+			Iterator<String> it = customerNode.fieldNames();
 			while (it.hasNext()) {
 				String name = it.next();
 				JsonNode temp = customerNode.path(name);
@@ -221,7 +221,7 @@ public class JsonUtil {
 		try {
 			JsonNode rootNode = mapper.readValue(jsonString, JsonNode.class);
 			mainData = new HashMap<String, String>();
-			Iterator<String> it = rootNode.getFieldNames();
+			Iterator<String> it = rootNode.fieldNames();
 			while (it.hasNext()) {
 				String name = it.next();
 				JsonNode temp = rootNode.path(name);
@@ -252,7 +252,7 @@ public class JsonUtil {
 	private static void readObjectOneChildData(Map<String,Object> childData,JsonNode obj,String nodeName) {
 		if(childData==null) return;
 		Map<String, String> child = new HashMap<String,String>();
-		Iterator<String> it = obj.getFieldNames();
+		Iterator<String> it = obj.fieldNames();
 		while (it.hasNext()) {
 			String name = it.next();
 			JsonNode temp = obj.path(name);
