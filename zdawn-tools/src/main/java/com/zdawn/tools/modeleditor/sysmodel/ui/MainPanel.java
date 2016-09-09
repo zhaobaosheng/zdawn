@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ import com.zdawn.commons.sysmodel.metaservice.impl.SysModelImpl;
 import com.zdawn.tools.modeleditor.KeyValue;
 import com.zdawn.tools.modeleditor.UiLifeCycle;
 import com.zdawn.tools.modeleditor.sysmodel.ui.config.ConfigPanel;
+import com.zdawn.tools.modeleditor.sysmodel.ui.entity.EntityPanel;
 import com.zdawn.tools.modeleditor.sysmodel.ui.entitylist.EntityListPanel;
 
 public class MainPanel extends JPanel implements UiLifeCycle {
@@ -152,8 +154,14 @@ public class MainPanel extends JPanel implements UiLifeCycle {
 				mainPanel.add(listPanel);
 				mainPanel.updateUI();
 			}
-		}else{//entity node
-			
+		}else if(obj instanceof Entity){//entity node
+			EntityPanel entityPanel = new EntityPanel(sysModel);
+			Map<String,String> para = new HashMap<String,String>();
+			para.put("tableName", ((Entity)obj).getTableName());
+			entityPanel.initUI(para);
+			mainPanel.removeAll();
+			mainPanel.add(entityPanel);
+			mainPanel.updateUI();
 		}
 	}
 }

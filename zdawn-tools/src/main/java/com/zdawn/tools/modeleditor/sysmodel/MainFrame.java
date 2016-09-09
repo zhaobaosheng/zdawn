@@ -45,7 +45,7 @@ public class MainFrame extends JFrame implements ActionListener{
 		setTitle("数据模型编辑工具");
 //		setIconImage(new ImageIcon(getClass().getResource("XXX.jpg")).getImage());
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		setSize(800, 600);
+		setSize(1000, 700);
 		Dimension frameSize = getSize();
 		if (frameSize.height > screenSize.height) {
 			frameSize.height = screenSize.height;
