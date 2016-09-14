@@ -49,7 +49,7 @@
   <dependency>
 	<groupId>com.zdawn</groupId>
   	<artifactId>zdawn-commons</artifactId>
-  	<version>1.0</version>
+  	<version>1.5</version>
   </dependency>
   </dependencies>
    <build>
