@@ -35,6 +35,26 @@ public class HttpRequestUtil {
 		}
 		return map;
 	}
+	
+	public static  Map<String,Object> getObjectParameter(HttpServletRequest request){
+		Map<String,Object> map = new HashMap<String,Object>();
+		Enumeration<String> e = request.getParameterNames();
+		while(e.hasMoreElements()){
+			String key = e.nextElement();
+			String[] list = request.getParameterValues(key);
+			if(list.length==1) map.put(key, list[0]);
+			else if(list.length>1){
+				String value = null;
+				for (int i = 0; i < list.length; i++) {
+					if(i==0) value = list[i];
+					else value = value +',' + list[i];
+				}
+				map.put(key, value);
+			}
+		}
+		return map;
+	}
+	
 	public static void saveCookie(HttpServletResponse response,String key,String value,String path){
 		Cookie cookie = new Cookie(key,value);
 		cookie.setMaxAge(-1);
