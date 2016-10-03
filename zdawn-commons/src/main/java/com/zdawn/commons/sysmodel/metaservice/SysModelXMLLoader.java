@@ -38,6 +38,7 @@ public class SysModelXMLLoader {
 		//创建装载xml对象
 		DocumentBuilderFactory domfactory = DocumentBuilderFactory.newInstance();
 		try {
+			log.info("load sysmodel xml="+file.getAbsolutePath());
 			DocumentBuilder builder = domfactory.newDocumentBuilder();
 			Document document = builder.parse(file);
 			//read version
