@@ -110,8 +110,12 @@ public class BeanUtil {
 			    String propertyClazz = propertyDes.getPropertyType().getName();
 			    String format = findPropertyFormat(propertyDes.getPropertyType(),propertyDes.getName(),
 			    		classFormat,propertyNameFormat);
-			    Object pvalue = ConvertUtil.convertToObject(propertyClazz,entry.getValue(), format);
-			    method.invoke(obj,pvalue);
+			    try {
+					Object pvalue = ConvertUtil.convertToObject(propertyClazz,entry.getValue(), format);
+					method.invoke(obj,pvalue);
+				} catch (Exception e) {
+					log.error("assemble "+propertyDes.getName()+ " property error");
+				}
 			} 
 		} catch (Exception e) {
 			log.error("bindBean", e);
