@@ -63,6 +63,7 @@ public class CommonPrefixIDGenerator extends GeneratorAdapter {
 		PreparedStatement stUpdate = null;
 		String id = null;
 		try {
+			con.setAutoCommit(false);
 			String updatesql = "update SYS_RECORD_ID set COUNT_NUM = COUNT_NUM + 1 where ENTITY_NAME=?";
 			st = con.prepareStatement(lockSql);
 			st.setString(1, entityName);
@@ -83,10 +84,11 @@ public class CommonPrefixIDGenerator extends GeneratorAdapter {
 				stUpdate = con.prepareStatement(updatesql);
 				stUpdate.setString(1, entityName);
 			}else{
-				updatesql = "update SYS_RECORD_ID set COUNT_NUM = 1,COUNT_DATE=? where ENTITY_NAME=?";
+				updatesql = "update SYS_RECORD_ID set COUNT_NUM = 2,COUNT_DATE=? where ENTITY_NAME=?";
 				stUpdate = con.prepareStatement(updatesql);
 				stUpdate.setDate(1,new Date(calendar.getTimeInMillis()));
 				stUpdate.setString(2,entityName);
+				count =1;
 			}
 			if (stUpdate.executeUpdate() == 0) throw new Exception("update error");
 			id = prefix+getDateString(calendar)+produceNumberMaxValue(count);
@@ -101,13 +103,14 @@ public class CommonPrefixIDGenerator extends GeneratorAdapter {
 			JdbcUtils.closeStatement(stUpdate);
 			JdbcUtils.closeResultSet(rs);
 			JdbcUtils.closeStatement(st);
+			JdbcUtils.setAutoCommit(con,true);
 		}
 		return id;
 	}
 	private String produceNumberMaxValue(int count) {
 		if(zeroSupport==null){
 			String intMaxString = "000000000";
-			zeroSupport = intMaxString.substring(0,String.valueOf(count).length());
+			zeroSupport = intMaxString.substring(0,String.valueOf(serialNumberMaxValue).length());
 		}
 		String code = zeroSupport+count;
 		return code.substring(code.length()-zeroSupport.length());

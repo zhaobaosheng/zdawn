@@ -43,6 +43,7 @@ public class CodeGenerator extends GeneratorAdapter{
 		 PreparedStatement stUpdate = null;
 		 try {
 			con = dataSource.getConnection();
+			con.setAutoCommit(false);
 			st = con.prepareStatement(lockSql);
 			st.setString(1, entityName);
 			rs = st.executeQuery();
@@ -69,6 +70,7 @@ public class CodeGenerator extends GeneratorAdapter{
 			JdbcUtils.closeResultSet(rs);
 			JdbcUtils.closeStatement(st);
 			JdbcUtils.closeStatement(stUpdate);
+			JdbcUtils.setAutoCommit(con,true);
 			JdbcUtils.closeConnection(con);
 		}
 		return result;

@@ -37,6 +37,7 @@ public class CountGenerator extends GeneratorAdapter {
 		PreparedStatement stUpdate = null;
 		try {
 			con = dataSource.getConnection();
+			con.setAutoCommit(false);
 			String updatesql = "update SYS_RECORD_ID set COUNT_NUM = COUNT_NUM + 1 where ENTITY_NAME='"+entityName+"'";
 			st = con.prepareStatement(lockSql);
 			st.setString(1, entityName);
@@ -57,6 +58,7 @@ public class CountGenerator extends GeneratorAdapter {
 			JdbcUtils.closeStatement(stUpdate);
 			JdbcUtils.closeResultSet(rs);
 			JdbcUtils.closeStatement(st);
+			JdbcUtils.setAutoCommit(con,true);
 			JdbcUtils.closeConnection(con);
 		}
 		return id;

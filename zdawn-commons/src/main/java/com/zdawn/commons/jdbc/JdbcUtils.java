@@ -41,6 +41,13 @@ public class JdbcUtils {
 			log.error("closeConnection",e);
 		}
 	}
+	public static void setAutoCommit(Connection connection,boolean auto){
+		try {
+			if(connection !=null) connection.setAutoCommit(auto);
+		} catch (Exception e) {
+			log.error("setAutoCommit",e);
+		}
+	}
 	/**
 	 * 根据给定sql语句查询数据
 	 * <br> 数据返回格式为字符串数组
