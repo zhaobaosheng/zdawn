@@ -306,7 +306,7 @@ public class JdbcUtils {
 					type.set(ps, para[i], i+1);
 				}
 			}
-			rs = ps.executeQuery(sql);
+			rs = ps.executeQuery();
 			if(rs.next()){
 			    count = rs.getLong(1);
 			}
@@ -345,7 +345,7 @@ public class JdbcUtils {
 					type.set(ps, para[i], i+1);
 				}
 			}
-			count = ps.executeUpdate(sql);
+			count = ps.executeUpdate();
 		} catch (SQLException e) {
 			throw e;
 		}finally{
