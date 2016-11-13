@@ -47,12 +47,11 @@ public class ValidatorUtil {
 	 */
 	public static String[] validateLength(Object value,boolean require,int minLength,int maxLength,String desc,String errorMsg){
 		if(minLength==-1 && maxLength==-1) return new String[]{"true",null};
-		if(require){
-			if(value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
-			String temp = value.toString();
-			if(minLength >= 0 && temp.length() < minLength) return new String[]{"false",desc==null ? errorMsg:desc.concat("长度不正确，>"+minLength)};
-			if(minLength >= 0 && temp.length() > maxLength) return new String[]{"false",desc==null ? errorMsg:desc.concat("长度不正确，<"+minLength)};
-		}
+		if(require && value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
+		if(value==null) return new String[]{"true",null};
+		String temp = value.toString();
+		if(minLength >= 0 && temp.length() < minLength) return new String[]{"false",desc==null ? errorMsg:desc.concat("长度不正确，>"+minLength)};
+		if(minLength >= 0 && temp.length() > maxLength) return new String[]{"false",desc==null ? errorMsg:desc.concat("长度不正确，<"+minLength)};
 		return new String[]{"true",null};
 	}
 	
@@ -73,13 +72,12 @@ public class ValidatorUtil {
 	 */
 	public static String[] validateRegx(Object value,boolean require,String expression,String desc,String errorMsg){
 		if(expression==null || expression.length()==0) return new String[]{"true",null};
-		if(require){
-			if(value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
-			String temp = value.toString();
-			Pattern pattern = getRegxPatternByExpression(expression);
-			Matcher matcher = pattern.matcher(temp);
-			if(!matcher.matches()) return new String[]{"false",desc==null ? errorMsg:desc.concat("填写格式不正确")};
-		}
+		if(require && value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
+		if(value==null) return new String[]{"true",null};
+		String temp = value.toString();
+		Pattern pattern = getRegxPatternByExpression(expression);
+		Matcher matcher = pattern.matcher(temp);
+		if(!matcher.matches()) return new String[]{"false",desc==null ? errorMsg:desc.concat("填写格式不正确")};
 		return new String[]{"true",null};
 	}
 	/**
@@ -139,13 +137,16 @@ public class ValidatorUtil {
 	 */
 	public static String[] validateChStr(Object value,boolean require,String desc,String errorMsg){
 		String eps = "[\\u4e00-\\u9fa5]";
-		if(require){
-			if(value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
-			String temp = value.toString();
-			Pattern pattern = getRegxPatternByExpression(eps);
-			Matcher matcher = pattern.matcher(temp);
-			if(!matcher.find()) return new String[]{"false",desc==null ? errorMsg:desc.concat("填写格式不正确")};
-		}
+		if(require && value==null) return new String[]{"false",desc==null ? errorMsg:desc.concat("必须填写")};
+		if(value==null) return new String[]{"true",null};
+		String temp = value.toString();
+		Pattern pattern = getRegxPatternByExpression(eps);
+		Matcher matcher = pattern.matcher(temp);
+		if(!matcher.find()) return new String[]{"false",desc==null ? errorMsg:desc.concat("填写格式不正确")};
 		return new String[]{"true",null};
-	} 
+	}
+
+	public void setRegxCacheSize(int regxCacheSize) {
+		ValidatorUtil.regxCacheSize = regxCacheSize;
+	}
 }
